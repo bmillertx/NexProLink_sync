@@ -4,6 +4,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   UserCredential,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
   onAuthStateChanged
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -49,36 +52,107 @@ export const googleSignIn = async (): Promise<UserCredential> => {
   }
 };
 
-const updateUserProfile = async (userCredential: UserCredential) => {
+const updateUserProfile = async (userCredential: UserCredential): Promise<UserProfile> => {
   const { user } = userCredential;
   const userRef = doc(db, 'users', user.uid);
-  
-  // Check if user profile exists
-  const userDoc = await getDoc(userRef);
-  
-  if (!userDoc.exists()) {
-    // Create new user profile
+  const userSnapshot = await getDoc(userRef);
+
+  const userProfile: UserProfile = {
+    uid: user.uid,
+    email: user.email || '',
+    displayName: user.displayName || user.email?.split('@')[0] || '',
+    photoURL: user.photoURL || '',
+    role: 'client', // Default role
+    updatedAt: new Date(),
+  };
+
+  if (!userSnapshot.exists()) {
+    // New user
+    userProfile.createdAt = new Date();
+  }
+
+  await setDoc(userRef, {
+    ...userProfile,
+    createdAt: userProfile.createdAt || serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+
+  return userProfile;
+};
+
+export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
+  try {
+    const userRef = doc(db, 'users', uid);
+    const userSnapshot = await getDoc(userRef);
+
+    if (!userSnapshot.exists()) {
+      return null;
+    }
+
+    const userData = userSnapshot.data() as UserProfile;
+    return {
+      ...userData,
+      createdAt: userData.createdAt ? new Date(userData.createdAt as any) : undefined,
+      updatedAt: userData.updatedAt ? new Date(userData.updatedAt as any) : undefined,
+    };
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+};
+
+export const register = async (
+  email: string,
+  password: string,
+  displayName: string,
+  userType: 'client' | 'expert'
+): Promise<UserCredential> => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const { user } = userCredential;
+
+    // Update the user's display name
+    await updateProfile(user, { displayName });
+
+    // Create user profile in Firestore
     const userProfile: UserProfile = {
       uid: user.uid,
       email: user.email || '',
-      displayName: user.displayName || user.email?.split('@')[0] || 'Anonymous',
-      photoURL: user.photoURL || undefined,
-      role: 'client', // Default role
+      displayName,
+      role: userType,
+      photoURL: user.photoURL || '',
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
-    await setDoc(userRef, {
+
+    await setDoc(doc(db, 'users', user.uid), {
       ...userProfile,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-  } else {
-    // Update existing profile
-    await setDoc(userRef, {
-      updatedAt: serverTimestamp(),
-      lastLogin: serverTimestamp()
-    }, { merge: true });
+
+    return userCredential;
+  } catch (error) {
+    console.error('Registration Error:', error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (email: string): Promise<void> => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    console.error('Password Reset Error:', error);
+    throw error;
+  }
+};
+
+export const logout = async (): Promise<void> => {
+  try {
+    await firebaseSignOut(auth);
+  } catch (error) {
+    console.error('Logout Error:', error);
+    throw error;
   }
 };
 

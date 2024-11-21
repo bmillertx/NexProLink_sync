@@ -9,7 +9,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string, userType: 'client' | 'professional') => Promise<void>;
+  register: (email: string, password: string, displayName: string, userType: 'client' | 'expert') => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     displayName: string,
-    userType: 'client' | 'professional'
+    userType: 'client' | 'expert'
   ) => {
     try {
       setError(null);
