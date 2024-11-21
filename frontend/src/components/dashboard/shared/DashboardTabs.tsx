@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Tab } from '@headlessui/react';
 import { classNames } from '@/utils/styles';
+import { useTheme } from '@/context/ThemeContext';
 
 interface TabItem {
   name: string;
@@ -13,21 +14,32 @@ interface DashboardTabsProps {
 }
 
 export default function DashboardTabs({ tabs }: DashboardTabsProps) {
+  const { isDarkMode } = useTheme();
+
   return (
-    <div className="w-full px-2 py-16 sm:px-0">
+    <div className="w-full px-2 py-8 sm:px-0">
       <Tab.Group>
-        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+        <Tab.List className={`flex space-x-1 rounded-xl p-1 ${
+          isDarkMode ? 'bg-gray-700/50' : 'bg-blue-900/20'
+        }`}>
           {tabs.map((tab) => (
             <Tab
               key={tab.name}
               data-tab={tab.name.toLowerCase()}
               className={({ selected }) =>
                 classNames(
-                  'w-full rounded-lg py-2.5 text-sm font-medium leading-5',
-                  'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
+                  'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors duration-200',
+                  'ring-white/60 ring-offset-2 focus:outline-none focus:ring-2',
                   selected
-                    ? 'bg-white shadow text-blue-700'
-                    : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
+                    ? isDarkMode
+                      ? 'bg-gray-700 text-white shadow-lg'
+                      : 'bg-white shadow text-blue-700'
+                    : isDarkMode
+                      ? 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                      : 'text-blue-100 hover:bg-white/[0.12] hover:text-white',
+                  isDarkMode
+                    ? 'ring-offset-gray-800'
+                    : 'ring-offset-blue-400'
                 )
               }
             >
@@ -38,13 +50,15 @@ export default function DashboardTabs({ tabs }: DashboardTabsProps) {
             </Tab>
           ))}
         </Tab.List>
-        <Tab.Panels className="mt-2">
+        <Tab.Panels className="mt-4">
           {tabs.map((tab, idx) => (
             <Tab.Panel
               key={idx}
               className={classNames(
-                'rounded-xl bg-white p-3',
-                'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
+                'rounded-xl p-4',
+                isDarkMode ? 'bg-gray-800' : 'bg-white',
+                'ring-white/60 ring-offset-2 focus:outline-none focus:ring-2',
+                isDarkMode ? 'ring-offset-gray-800' : 'ring-offset-blue-400'
               )}
             >
               {tab.content}
