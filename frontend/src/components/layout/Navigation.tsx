@@ -7,14 +7,8 @@ import { SunIcon, MoonIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
 const Navigation = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('login');
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-
-  const handleAuthClick = (view: 'login' | 'signup') => {
-    setAuthModalView(view);
-    setIsAuthModalOpen(true);
-  };
 
   const handleLogout = async () => {
     try {
@@ -60,20 +54,12 @@ const Navigation = () => {
                   </div>
                 </div>
               ) : (
-                <>
-                  <button
-                    onClick={() => handleAuthClick('login')}
-                    className="text-gray-700 dark:text-gray-200 hover:text-primary-500 transition-colors"
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => handleAuthClick('signup')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-                  >
-                    Sign Up
-                  </button>
-                </>
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                >
+                  Sign In
+                </button>
               )}
 
               <button
@@ -95,7 +81,6 @@ const Navigation = () => {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        initialView={authModalView}
       />
     </>
   );
