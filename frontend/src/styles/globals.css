@@ -7,29 +7,11 @@
   --secondary-gradient: linear-gradient(135deg, #3b82f6, #6366f1);
 }
 
-/* Custom Animations */
+/* Custom animations */
 @keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-@keyframes gradient-x {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
 }
 
 @keyframes gradient {
@@ -38,16 +20,7 @@
   100% { background-position: 0% 50%; }
 }
 
-/* Custom Utilities */
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-gradient-x {
-  background-size: 200% 200%;
-  animation: gradient-x 15s ease infinite;
-}
-
+/* Custom utility classes */
 .gradient-bg {
   background: var(--primary-gradient);
   background-size: 200% 200%;
@@ -58,47 +31,21 @@
   animation: float 6s ease-in-out infinite;
 }
 
-/* Glass Morphism */
+/* Dark mode styles */
+.dark {
+  --tw-bg-opacity: 1;
+  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+  color: rgb(243 244 246 / var(--tw-text-opacity));
+}
+
+/* Glass effect */
 .glass {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .dark .glass {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Base Styles */
-body {
-  @apply antialiased text-gray-900 dark:text-white bg-white dark:bg-gray-900;
-}
-
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-  @apply font-bold tracking-tight;
-}
-
-/* Links */
-a {
-  @apply transition-colors duration-200;
-}
-
-/* Buttons */
-button, .button {
-  @apply transition-all duration-200 transform hover:scale-105;
-}
-
-/* Dark mode styles */
-.dark {
-  --tw-bg-opacity: 1;
-  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
-  color: rgb(243 244 246 / var(--tw-text-opacity));
 }
