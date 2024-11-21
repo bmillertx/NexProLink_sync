@@ -80,7 +80,7 @@ const updateUserProfile = async (userCredential: UserCredential): Promise<UserPr
   return userProfile;
 };
 
-export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
+const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   try {
     const userRef = doc(db, 'users', uid);
     const userSnapshot = await getDoc(userRef);
@@ -173,4 +173,22 @@ export const initAuthStateListener = (callback: (user: any) => void) => {
   });
 };
 
+// Create auth service object
+const authService = {
+  login,
+  googleSignIn,
+  register,
+  resetPassword,
+  logout,
+  signOut,
+  getUserProfile,
+  updateUserProfile,
+  initAuthStateListener
+};
+
+// Export the service object as default
+export default authService;
+
+// Export types and auth instance
+export type { UserProfile };
 export { auth };
