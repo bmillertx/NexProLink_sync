@@ -6,6 +6,7 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { classNames } from '@/utils/styles';
+import { useTheme } from '@/context/ThemeContext';
 
 interface Message {
   id: string;
@@ -25,6 +26,7 @@ interface Conversation {
 }
 
 export default function MessagesTab() {
+  const { isDarkMode } = useTheme();
   const [conversations, setConversations] = useState<Conversation[]>([
     {
       id: '1',
@@ -36,7 +38,7 @@ export default function MessagesTab() {
           from: 'Dr. Sarah Chen',
           preview: 'Looking forward to our upcoming session!',
           timestamp: new Date(2024, 1, 14, 15, 30),
-          unread: true,
+          unread: false,
           fullMessage: 'Looking forward to our upcoming session! Please make sure to review the materials I sent earlier.',
         },
         {
@@ -80,54 +82,83 @@ export default function MessagesTab() {
       unread: false,
     };
 
+    const updatedConversation = {
+      ...selectedConversation,
+      messages: [...selectedConversation.messages, newMsg],
+    };
+
+    setSelectedConversation(updatedConversation);
     setConversations((prev) =>
       prev.map((conv) =>
-        conv.id === selectedConversation.id
-          ? { ...conv, messages: [...conv.messages, newMsg] }
-          : conv
+        conv.id === selectedConversation.id ? updatedConversation : conv
       )
     );
 
     setNewMessage('');
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleSelectConversation = (conversation: Conversation) => {
+    // Mark all messages in the conversation as read
+    const updatedConversation = {
+      ...conversation,
+      messages: conversation.messages.map((msg) => ({ ...msg, unread: false })),
+    };
+
+    // Update both states
+    setSelectedConversation(updatedConversation);
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.id === conversation.id ? updatedConversation : conv
+      )
+    );
+  };
+
   return (
-    <div className="flex h-[600px] bg-white rounded-lg shadow-lg">
+    <div className={`flex flex-col lg:flex-row h-[600px] ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}>
       {/* Conversations List */}
-      <div className="w-1/3 border-r border-gray-200">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+      <div className={`w-full lg:w-1/3 border-r ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <h2 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Messages</h2>
         </div>
         <div className="overflow-y-auto h-[calc(100%-4rem)]">
           {conversations.map((conversation) => (
             <div
               key={conversation.id}
-              onClick={() => setSelectedConversation(conversation)}
+              onClick={() => handleSelectConversation(conversation)}
               className={classNames(
-                'p-4 cursor-pointer hover:bg-gray-50',
-                selectedConversation?.id === conversation.id ? 'bg-blue-50' : ''
+                'p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700',
+                selectedConversation?.id === conversation.id
+                  ? 'bg-blue-50 dark:bg-gray-700'
+                  : ''
               )}
             >
-              <div className="flex items-center space-x-3">
+              <div className="flex items-start space-x-3">
                 {conversation.avatar ? (
                   <img
                     src={conversation.avatar}
                     alt={conversation.with}
-                    className="h-10 w-10 rounded-full"
+                    className="h-10 w-10 rounded-full flex-shrink-0"
                   />
                 ) : (
-                  <UserCircleIcon className="h-10 w-10 text-gray-400" />
+                  <UserCircleIcon className="h-10 w-10 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} truncate`}>
                     {conversation.with}
                   </p>
-                  <p className="text-sm text-gray-500 truncate">
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} truncate`}>
                     {conversation.messages[conversation.messages.length - 1].preview}
                   </p>
                 </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-gray-500">
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} whitespace-nowrap`}>
                     {format(
                       conversation.messages[conversation.messages.length - 1].timestamp,
                       'MMM d'
@@ -150,25 +181,25 @@ export default function MessagesTab() {
       </div>
 
       {/* Conversation */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {selectedConversation ? (
           <>
-            <div className="p-4 border-b border-gray-200">
+            <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex items-center space-x-3">
                 {selectedConversation.avatar ? (
                   <img
                     src={selectedConversation.avatar}
                     alt={selectedConversation.with}
-                    className="h-10 w-10 rounded-full"
+                    className="h-10 w-10 rounded-full flex-shrink-0"
                   />
                 ) : (
-                  <UserCircleIcon className="h-10 w-10 text-gray-400" />
+                  <UserCircleIcon className="h-10 w-10 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 )}
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <h2 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} truncate`}>
                     {selectedConversation.with}
                   </h2>
-                  <p className="text-sm text-gray-500">Online</p>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Online</p>
                 </div>
               </div>
             </div>
@@ -184,17 +215,23 @@ export default function MessagesTab() {
                 >
                   <div
                     className={classNames(
-                      'max-w-[70%] rounded-lg p-3',
+                      'max-w-[85%] lg:max-w-[70%] rounded-lg p-3 break-words',
                       message.from === 'You'
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
+                        : isDarkMode
+                          ? 'bg-gray-700 text-gray-100'
+                          : 'bg-gray-100 text-gray-900'
                     )}
                   >
-                    <p>{message.fullMessage || message.preview}</p>
+                    <p className="whitespace-pre-wrap">{message.fullMessage || message.preview}</p>
                     <p
                       className={classNames(
                         'text-xs mt-1',
-                        message.from === 'You' ? 'text-blue-100' : 'text-gray-500'
+                        message.from === 'You'
+                          ? 'text-blue-100'
+                          : isDarkMode
+                            ? 'text-gray-400'
+                            : 'text-gray-500'
                       )}
                     >
                       {format(message.timestamp, 'h:mm a')}
@@ -204,23 +241,27 @@ export default function MessagesTab() {
               ))}
             </div>
 
-            <div className="p-4 border-t border-gray-200">
+            <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex space-x-2">
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   placeholder="Type a message..."
-                  className="flex-1 rounded-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSendMessage();
-                    }
-                  }}
+                  className="flex-1 rounded-full px-4 py-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                 />
                 <button
                   onClick={handleSendMessage}
-                  className="inline-flex items-center justify-center p-2 rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  disabled={!newMessage.trim()}
+                  className={classNames(
+                    'inline-flex items-center justify-center p-3 rounded-full text-white transition-colors',
+                    newMessage.trim()
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : isDarkMode
+                        ? 'bg-gray-700 cursor-not-allowed'
+                        : 'bg-gray-300 cursor-not-allowed'
+                  )}
                 >
                   <PaperAirplaneIcon className="h-5 w-5" />
                 </button>
@@ -228,7 +269,7 @@ export default function MessagesTab() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
+          <div className={`flex-1 flex items-center justify-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             Select a conversation to start messaging
           </div>
         )}
