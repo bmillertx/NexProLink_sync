@@ -16,9 +16,31 @@ export interface UserProfile {
   userType: 'client' | 'expert';
   createdAt: string;
   updatedAt: string;
+  professionalTitle?: string;
+  yearsOfExperience?: number;
+  bio?: string;
+  hourlyRate?: number;
+  credentials?: string[];
+  specialties?: string[];
+  isVerified?: boolean;
 }
 
-const createUserProfile = async (uid: string, email: string, displayName: string, userType: 'client' | 'expert') => {
+export interface ExpertRegistrationData {
+  professionalTitle: string;
+  yearsOfExperience: number;
+  bio: string;
+  hourlyRate: number;
+  credentials: string[];
+  specialties: string[];
+}
+
+const createUserProfile = async (
+  uid: string, 
+  email: string, 
+  displayName: string, 
+  userType: 'client' | 'expert',
+  expertData?: ExpertRegistrationData
+) => {
   const userProfile: UserProfile = {
     uid,
     email: email || '',
@@ -26,6 +48,15 @@ const createUserProfile = async (uid: string, email: string, displayName: string
     userType,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    ...(expertData && {
+      professionalTitle: expertData.professionalTitle,
+      yearsOfExperience: expertData.yearsOfExperience,
+      bio: expertData.bio,
+      hourlyRate: expertData.hourlyRate,
+      credentials: expertData.credentials,
+      specialties: expertData.specialties,
+      isVerified: false, // Experts start as unverified
+    }),
   };
 
   await setDoc(doc(db, 'users', uid), userProfile);
@@ -37,7 +68,13 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   return userDoc.exists() ? userDoc.data() as UserProfile : null;
 };
 
-export const register = async (email: string, password: string, displayName: string, userType: 'client' | 'expert') => {
+export const register = async (
+  email: string, 
+  password: string, 
+  displayName: string, 
+  userType: 'client' | 'expert',
+  expertData?: ExpertRegistrationData
+) => {
   // Validate input
   if (password.length < 6) {
     throw new Error('Password must be at least 6 characters');
@@ -52,6 +89,25 @@ export const register = async (email: string, password: string, displayName: str
     throw new Error('Invalid user type');
   }
 
+  // Validate expert data
+  if (userType === 'expert') {
+    if (!expertData) {
+      throw new Error('Expert registration data is required');
+    }
+    if (!expertData.professionalTitle) {
+      throw new Error('Professional title is required for experts');
+    }
+    if (expertData.yearsOfExperience < 0) {
+      throw new Error('Years of experience must be a positive number');
+    }
+    if (!expertData.bio) {
+      throw new Error('Professional bio is required for experts');
+    }
+    if (expertData.hourlyRate < 0) {
+      throw new Error('Hourly rate must be a positive number');
+    }
+  }
+
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const { user } = userCredential;
@@ -60,7 +116,7 @@ export const register = async (email: string, password: string, displayName: str
     await updateProfile(user, { displayName });
 
     // Create user profile in Firestore
-    await createUserProfile(user.uid, email, displayName, userType);
+    await createUserProfile(user.uid, email, displayName, userType, expertData);
   } catch (error: any) {
     const errorMessage = error.code === 'auth/email-already-in-use'
       ? 'Email is already registered. Please use a different email or try logging in.'
@@ -197,23 +253,28 @@ export const resetPassword = async (email: string) => {
   }
 };
 
-export const createTestAccount = async () => {
-  const email = 'test@nexprolink.com';
-  const password = 'Client123!@#';
-  const displayName = 'Test User';
-  const userType = 'client' as const;
+export const createTestAccount = async (type: 'client' | 'expert' = 'client') => {
+  const isClient = type === 'client';
+  const email = isClient ? 'test.client@nexprolink.com' : 'test.expert@nexprolink.com';
+  const password = 'Test123!@#';
+  const displayName = isClient ? 'Test Client' : 'Test Expert';
+  const userType = type;
 
   try {
-    console.log('Creating test account...');
-    await register(email, password, displayName, userType);
-    console.log('Test account created successfully');
-  } catch (error: any) {
-    if (error.message.includes('already registered')) {
-      console.log('Test account already exists');
-    } else {
-      console.error('Error creating test account:', error);
-      throw error;
+    console.log(`Creating test ${type} account...`);
+    // First try to login if account exists
+    try {
+      await login(email, password);
+      console.log(`Test ${type} account already exists, logged in successfully`);
+      return;
+    } catch (loginError) {
+      // If login fails, create new account
+      await register(email, password, displayName, userType);
+      console.log(`Test ${type} account created successfully`);
     }
+  } catch (error: any) {
+    console.error(`Error with test ${type} account:`, error);
+    throw error;
   }
 };
 

@@ -1,0 +1,12 @@
+{
+  "name": "nexprolink_sync",
+  "version": "1.0.0",
+  "description": "A modern platform connecting users with local professionals for paid consultations.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
