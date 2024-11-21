@@ -1,123 +1,102 @@
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  updateProfile,
-  User,
-  onAuthStateChanged,
+import { 
+  signInWithEmailAndPassword, 
+  signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  UserCredential,
+  onAuthStateChanged
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/config/firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 export interface UserProfile {
   uid: string;
   email: string;
-  displayName?: string;
+  displayName: string;
+  role?: 'client' | 'expert';
   photoURL?: string;
-  userType: 'client' | 'professional';
-  createdAt: number;
-  isVerified: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-class AuthService {
-  constructor() {
-    // Set up auth state listener in development
-    if (process.env.NODE_ENV === 'development') {
-      onAuthStateChanged(auth, (user) => {
-        console.log('Auth State Changed:', user ? `User logged in: ${user.email}` : 'User logged out');
-      });
-    }
+export const login = async (email: string, password: string): Promise<UserCredential> => {
+  try {
+    console.log('Attempting login with:', { email });
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Create or update user profile in Firestore
+    await updateUserProfile(userCredential);
+    
+    return userCredential;
+  } catch (error) {
+    console.error('Auth Error:', error);
+    throw error;
   }
+};
 
-  private handleError(error: any): Error {
-    console.error('Auth Error:', {
-      code: error.code,
-      message: error.message,
-      fullError: error
+export const googleSignIn = async (): Promise<UserCredential> => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    
+    // Create or update user profile in Firestore
+    await updateUserProfile(userCredential);
+    
+    return userCredential;
+  } catch (error) {
+    console.error('Google Sign In Error:', error);
+    throw error;
+  }
+};
+
+const updateUserProfile = async (userCredential: UserCredential) => {
+  const { user } = userCredential;
+  const userRef = doc(db, 'users', user.uid);
+  
+  // Check if user profile exists
+  const userDoc = await getDoc(userRef);
+  
+  if (!userDoc.exists()) {
+    // Create new user profile
+    const userProfile: UserProfile = {
+      uid: user.uid,
+      email: user.email || '',
+      displayName: user.displayName || user.email?.split('@')[0] || 'Anonymous',
+      photoURL: user.photoURL || undefined,
+      role: 'client', // Default role
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    await setDoc(userRef, {
+      ...userProfile,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
-
-    switch (error.code) {
-      case 'auth/invalid-email':
-        return new Error('Invalid email address');
-      case 'auth/user-disabled':
-        return new Error('This account has been disabled');
-      case 'auth/user-not-found':
-        return new Error('No account found with this email');
-      case 'auth/wrong-password':
-        return new Error('Incorrect password');
-      case 'auth/invalid-credential':
-        return new Error('Invalid email or password');
-      default:
-        return new Error(error.message || 'An error occurred during authentication');
-    }
+  } else {
+    // Update existing profile
+    await setDoc(userRef, {
+      updatedAt: serverTimestamp(),
+      lastLogin: serverTimestamp()
+    }, { merge: true });
   }
+};
 
-  async login(email: string, password: string): Promise<User> {
-    try {
-      console.log('Attempting login with:', { email });
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Login successful:', userCredential.user.email);
-      return userCredential.user;
-    } catch (error: any) {
-      throw this.handleError(error);
-    }
+export const signOut = async (): Promise<void> => {
+  try {
+    await firebaseSignOut(auth);
+  } catch (error) {
+    console.error('Sign Out Error:', error);
+    throw error;
   }
+};
 
-  async register(
-    email: string,
-    password: string,
-    displayName: string,
-    userType: 'client' | 'professional'
-  ): Promise<UserProfile> {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+// Listen to auth state changes
+export const initAuthStateListener = (callback: (user: any) => void) => {
+  return onAuthStateChanged(auth, (user) => {
+    console.log('Auth State Changed:', user ? 'User logged in' : 'User logged out');
+    callback(user);
+  });
+};
 
-      await updateProfile(user, { displayName });
-      await sendEmailVerification(user);
-
-      const userProfile: UserProfile = {
-        uid: user.uid,
-        email: user.email!,
-        displayName,
-        userType,
-        createdAt: Date.now(),
-        isVerified: false,
-      };
-
-      await setDoc(doc(db, 'users', user.uid), userProfile);
-      return userProfile;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async logout(): Promise<void> {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async resetPassword(email: string): Promise<void> {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async getUserProfile(uid: string): Promise<UserProfile | null> {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', uid));
-      return userDoc.exists() ? userDoc.data() as UserProfile : null;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-}
-
-export const authService = new AuthService();
+export { auth };

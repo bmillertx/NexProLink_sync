@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getAnalytics } from 'firebase/analytics';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -11,21 +11,31 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase only if it hasn't been initialized
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
+
+// Initialize Analytics only on client side
+let analytics = null;
+if (typeof window !== 'undefined') {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn('Analytics initialization failed:', error);
+  }
+}
 
 // Debug Firebase configuration in development
 if (process.env.NODE_ENV === 'development') {
   console.log('Firebase Config:', {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    apiKey: firebaseConfig.apiKey,
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId
   });
 }
 
-export { app, auth, db, storage };
+export { app, auth, db, analytics };

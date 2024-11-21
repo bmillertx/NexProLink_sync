@@ -15,7 +15,33 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin-allow-popups"
+          }
+        ]
+      }
     ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    }
   },
   "storage": {
     "rules": "storage.rules"
