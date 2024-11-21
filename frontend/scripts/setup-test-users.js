@@ -44,27 +44,46 @@ const testUsers = [
 async function setupTestUsers() {
   try {
     for (const user of testUsers) {
-      // Create user in Firebase Auth
-      const userRecord = await auth.createUser({
-        email: user.email,
-        password: user.password,
-        displayName: user.displayName,
-      });
+      let userRecord;
+      
+      try {
+        // Try to get existing user
+        userRecord = await auth.getUserByEmail(user.email);
+        console.log(`Updating existing user: ${user.email}`);
+        
+        // Update user password
+        await auth.updateUser(userRecord.uid, {
+          password: user.password,
+          displayName: user.displayName,
+        });
+      } catch (error) {
+        if (error.code === 'auth/user-not-found') {
+          // Create new user if doesn't exist
+          console.log(`Creating new user: ${user.email}`);
+          userRecord = await auth.createUser({
+            email: user.email,
+            password: user.password,
+            displayName: user.displayName,
+          });
+        } else {
+          throw error;
+        }
+      }
 
       // Add custom claims for role
       await auth.setCustomUserClaims(userRecord.uid, { role: user.role });
 
-      // Create user profile in Firestore
+      // Update or create user profile in Firestore
       await db.collection('users').doc(userRecord.uid).set({
         email: user.email,
         displayName: user.displayName,
         role: user.role,
         profile: user.profile,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
 
-      console.log(`Created test user: ${user.email}`);
+      console.log(`Successfully set up user: ${user.email}`);
     }
 
     console.log('Test users setup completed successfully!');
