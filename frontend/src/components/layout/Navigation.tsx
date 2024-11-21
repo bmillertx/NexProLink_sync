@@ -32,6 +32,12 @@ const Navigation = () => {
             </div>
 
             <div className="hidden md:flex md:items-center md:space-x-4">
+              <Link
+                href="/pricing"
+                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
+              >
+                Pricing
+              </Link>
               {user ? (
                 <div className="relative group">
                   <button className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500">
