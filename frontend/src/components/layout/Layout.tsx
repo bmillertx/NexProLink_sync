@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import Header from './Header';
 import Footer from './Footer';
+import Navigation from './Navigation';
+import { Toaster } from 'react-hot-toast';
 import { useTheme } from 'next-themes';
 import { AuthProvider } from '@/context/AuthContext';
 
@@ -20,11 +21,12 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <AuthProvider>
       <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'dark' : ''}`}>
-        <Header />
-        <main className="flex-grow">
+        <Navigation />
+        <main className="flex-grow pt-16">
           {children}
         </main>
         <Footer />
+        <Toaster position="top-right" />
       </div>
     </AuthProvider>
   );

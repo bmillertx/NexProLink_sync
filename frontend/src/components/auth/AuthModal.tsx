@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -11,13 +12,49 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, initialView = 'login' }: AuthModalProps) {
   const [view, setView] = useState<'login' | 'signup'>(initialView);
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    displayName: '',
+    userType: 'client' as 'client' | 'professional',
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { login, register } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual authentication
-    login();
-    onClose();
+    setLoading(true);
+
+    try {
+      if (view === 'login') {
+        await login(formData.email, formData.password);
+        toast.success('Successfully logged in!');
+      } else {
+        if (formData.password !== formData.confirmPassword) {
+          toast.error('Passwords do not match');
+          return;
+        }
+        await register(
+          formData.email,
+          formData.password,
+          formData.displayName,
+          formData.userType
+        );
+        toast.success('Account created! Please verify your email.');
+      }
+      onClose();
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -68,6 +105,48 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }: Au
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
+                {view === 'signup' && (
+                  <>
+                    <div>
+                      <label
+                        htmlFor="displayName"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        id="displayName"
+                        name="displayName"
+                        required
+                        value={formData.displayName}
+                        onChange={handleChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="userType"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        I am a
+                      </label>
+                      <select
+                        id="userType"
+                        name="userType"
+                        required
+                        value={formData.userType}
+                        onChange={handleChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      >
+                        <option value="client">Client looking for consultation</option>
+                        <option value="professional">Professional offering services</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
                 <div>
                   <label
                     htmlFor="email"
@@ -78,7 +157,10 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }: Au
                   <input
                     type="email"
                     id="email"
+                    name="email"
                     required
+                    value={formData.email}
+                    onChange={handleChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
@@ -93,7 +175,10 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }: Au
                   <input
                     type="password"
                     id="password"
+                    name="password"
                     required
+                    value={formData.password}
+                    onChange={handleChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
@@ -109,7 +194,10 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }: Au
                     <input
                       type="password"
                       id="confirmPassword"
+                      name="confirmPassword"
                       required
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
@@ -117,9 +205,38 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }: Au
 
                 <button
                   type="submit"
-                  className="w-full rounded-md bg-primary-600 py-3 text-white font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                  disabled={loading}
+                  className="w-full rounded-md bg-primary-600 py-3 text-white font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {view === 'login' ? 'Sign In' : 'Create Account'}
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : view === 'login' ? (
+                    'Sign In'
+                  ) : (
+                    'Create Account'
+                  )}
                 </button>
               </form>
 
