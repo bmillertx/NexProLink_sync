@@ -1,7 +1,91 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRightIcon, ChatBubbleLeftRightIcon as ChatAltIcon, ClockIcon, BanknotesIcon as CashIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import TestimonialCarousel from '../components/testimonials/TestimonialCarousel';
+
+// Mock data for online contributors
+const onlineContributors = [
+  {
+    id: 1,
+    name: "Dr. Sarah Chen",
+    role: "Psychiatrist",
+    specialty: "Cognitive Behavioral Therapy",
+    rating: 4.9,
+    reviews: 128,
+    image: "https://randomuser.me/api/portraits/women/28.jpg",
+    status: "Available",
+    nextSlot: "In 15 mins",
+    rate: "$150/hour",
+    badges: ["Top Rated", "Verified"],
+  },
+  {
+    id: 2,
+    name: "Robert Mitchell",
+    role: "Financial Advisor",
+    specialty: "Investment Planning",
+    rating: 4.8,
+    reviews: 95,
+    image: "https://randomuser.me/api/portraits/men/32.jpg",
+    status: "Available",
+    nextSlot: "In 30 mins",
+    rate: "$120/hour",
+    badges: ["Expert", "Verified"],
+  },
+  {
+    id: 3,
+    name: "Maria Garcia",
+    role: "Immigration Lawyer",
+    specialty: "Visa Applications",
+    rating: 5.0,
+    reviews: 156,
+    image: "https://randomuser.me/api/portraits/women/42.jpg",
+    status: "Available",
+    nextSlot: "Now",
+    rate: "$180/hour",
+    badges: ["Top Rated", "Featured"],
+  },
+  {
+    id: 4,
+    name: "Prof. James Wilson",
+    role: "Mathematics Tutor",
+    specialty: "Advanced Calculus",
+    rating: 4.9,
+    reviews: 203,
+    image: "https://randomuser.me/api/portraits/men/45.jpg",
+    status: "Available",
+    nextSlot: "In 45 mins",
+    rate: "$75/hour",
+    badges: ["PhD", "Verified"],
+  },
+  {
+    id: 5,
+    name: "Emma Thompson",
+    role: "Career Coach",
+    specialty: "Executive Development",
+    rating: 4.8,
+    reviews: 167,
+    image: "https://randomuser.me/api/portraits/women/33.jpg",
+    status: "Available",
+    nextSlot: "In 20 mins",
+    rate: "$100/hour",
+    badges: ["Certified", "Featured"],
+  },
+  {
+    id: 6,
+    name: "Dr. Michael Lee",
+    role: "Nutritionist",
+    specialty: "Sports Nutrition",
+    rating: 4.9,
+    reviews: 142,
+    image: "https://randomuser.me/api/portraits/men/52.jpg",
+    status: "Available",
+    nextSlot: "Now",
+    rate: "$90/hour",
+    badges: ["PhD", "Verified"],
+  }
+];
 
 export default function Home() {
   return (
@@ -40,6 +124,112 @@ export default function Home() {
               </Link>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Online Contributors Section */}
+      <section className="py-16 bg-white dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl mb-4">
+                Online Contributors
+              </h2>
+              <p className="text-xl text-gray-500 dark:text-gray-400">
+                Connect with our verified professionals ready to help you right now
+              </p>
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {onlineContributors.map((contributor, index) => (
+              <motion.div
+                key={contributor.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+              >
+                <div className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="relative w-16 h-16">
+                      <Image
+                        src={contributor.image}
+                        alt={contributor.name}
+                        fill
+                        className="rounded-full object-cover"
+                      />
+                      <div className="absolute -bottom-1 -right-1">
+                        <div className="flex items-center">
+                          <span className="flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                        {contributor.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {contributor.role}
+                      </p>
+                      <p className="text-xs text-primary-600 dark:text-primary-400">
+                        {contributor.specialty}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center">
+                        <span className="text-yellow-400 mr-1">★</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {contributor.rating}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {contributor.reviews} reviews
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {contributor.badges.map((badge, badgeIndex) => (
+                      <span
+                        key={badgeIndex}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200"
+                      >
+                        <CheckCircleIcon className="w-3 h-3 mr-1" />
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {contributor.rate}
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        Next available: {contributor.nextSlot}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/book/${contributor.id}`}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                      Book Now
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
