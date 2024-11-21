@@ -52,9 +52,9 @@ const benefits = [
 export default function Pricing() {
   return (
     <div className="bg-white dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Hero Section */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-16">
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl">
             Transparent Pricing
           </h1>
@@ -65,11 +65,11 @@ export default function Pricing() {
         </div>
 
         {/* How It Works */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-10">
             Simple and Transparent
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature) => (
               <div
                 key={feature.title}
@@ -90,7 +90,7 @@ export default function Pricing() {
         </div>
 
         {/* Example Calculation */}
-        <div className="mb-20 bg-gray-50 dark:bg-gray-800 rounded-lg p-8">
+        <div className="mb-16 bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-8">
             Example Calculation
           </h2>
@@ -118,10 +118,10 @@ export default function Pricing() {
 
         {/* Benefits Grid */}
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-10">
             Platform Benefits
           </h2>
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6">
             {benefits.map((section) => (
               <div
                 key={section.title}
@@ -156,7 +156,7 @@ export default function Pricing() {
         </div>
 
         {/* CTA */}
-        <div className="mt-20 text-center">
+        <div className="mt-16 text-center">
           <a
             href="/experts"
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"

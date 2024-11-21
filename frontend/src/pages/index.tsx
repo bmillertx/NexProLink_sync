@@ -102,21 +102,21 @@ export default function Home() {
   return (
     <div className="relative">
       {/* Hero Section */}
-      <section className="relative min-h-[80vh] gradient-bg">
+      <section className="relative min-h-[60vh] gradient-bg">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-gray-900" />
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center"
           >
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-8">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-4">
               Connect with Expert Professionals
               <span className="block text-primary-400">On Your Terms</span>
             </h1>
-            <p className="max-w-2xl mx-auto text-xl text-gray-200 mb-12">
+            <p className="max-w-2xl mx-auto text-xl text-gray-200 mb-6">
               From electricians to professors, get instant access to verified professionals for personalized consultations.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -149,9 +149,9 @@ export default function Home() {
       </section>
 
       {/* Online Contributors Section */}
-      <section className="py-12 bg-white dark:bg-gray-900">
+      <section className="py-6 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -167,7 +167,7 @@ export default function Home() {
             </motion.div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {onlineContributors.map((contributor, index) => (
               <motion.div
                 key={contributor.id}
@@ -177,7 +177,7 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
               >
-                <div className="p-6">
+                <div className="p-5">
                   <div className="flex items-center space-x-4">
                     <div className="relative w-16 h-16">
                       <Image
@@ -255,24 +255,26 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-white dark:bg-gray-900">
+      <section className="py-10 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-              Why Choose NexProLink?
-            </h2>
-            <p className="mt-4 text-xl text-gray-500 dark:text-gray-400">
-              Experience seamless professional consultations with our cutting-edge platform.
-            </p>
-          </motion.div>
+          <div className="text-center mb-8">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                Why Choose NexProLink?
+              </h2>
+              <p className="mt-4 text-xl text-gray-500 dark:text-gray-400">
+                Experience seamless professional consultations with our cutting-edge platform.
+              </p>
+            </motion.div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-5">
             {/* Feature 1 */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -334,10 +336,10 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="relative py-16 bg-gray-900">
+      <section className="relative py-10 bg-gray-50 dark:bg-gray-800">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-primary-900/20 to-gray-900" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-8">
             <h2 className="text-4xl font-bold text-white mb-4">
               Trusted by Professionals
             </h2>
@@ -351,7 +353,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-16 gradient-bg">
+      <section className="relative py-10 gradient-bg">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

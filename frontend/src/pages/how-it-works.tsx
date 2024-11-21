@@ -47,7 +47,7 @@ const HowItWorks: NextPage = () => {
   return (
     <div className="min-h-screen pt-16">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-20">
+      <div className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
             How NexProLink Works
@@ -59,9 +59,9 @@ const HowItWorks: NextPage = () => {
       </div>
 
       {/* Steps Section */}
-      <div className="py-20 bg-white dark:bg-gray-900">
+      <div className="py-16 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
               Simple Steps to Get Started
             </h2>
@@ -70,7 +70,7 @@ const HowItWorks: NextPage = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {steps.map((step, index) => (
               <div
                 key={step.title}
@@ -95,9 +95,9 @@ const HowItWorks: NextPage = () => {
       </div>
 
       {/* Pricing Example Section */}
-      <div className="py-20 bg-gray-50 dark:bg-gray-800">
+      <div className="py-16 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
               Transparent Pricing
             </h2>
@@ -106,7 +106,7 @@ const HowItWorks: NextPage = () => {
             </p>
           </div>
 
-          <div className="max-w-2xl mx-auto bg-white dark:bg-gray-700 rounded-lg shadow-sm p-8 mb-16">
+          <div className="max-w-2xl mx-auto bg-white dark:bg-gray-700 rounded-lg shadow-sm p-6 mb-12">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
               Example Calculation
             </h3>
@@ -128,7 +128,7 @@ const HowItWorks: NextPage = () => {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6">
             {features.map((feature) => (
               <div
                 key={feature.title}
@@ -147,7 +147,7 @@ const HowItWorks: NextPage = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="py-20 bg-white dark:bg-gray-900">
+      <div className="py-16 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
             Ready to Connect with an Expert?

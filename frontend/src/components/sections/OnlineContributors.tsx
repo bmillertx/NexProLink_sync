@@ -98,7 +98,7 @@ export default function OnlineContributors() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {professionals.map((professional) => (
             <div
               key={professional.id}
@@ -117,7 +117,7 @@ export default function OnlineContributors() {
                 )}
               </div>
 
-              <div className="flex-1 p-6">
+              <div className="flex-1 p-5">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {professional.name}
