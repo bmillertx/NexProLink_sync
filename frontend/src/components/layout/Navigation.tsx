@@ -31,7 +31,19 @@ const Navigation = () => {
               </Link>
             </div>
 
-            <div className="hidden md:flex md:items-center md:space-x-4">
+            <div className="hidden md:flex md:items-center md:space-x-6">
+              <Link
+                href="/experts"
+                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
+              >
+                Find Experts
+              </Link>
+              <Link
+                href="/how-it-works"
+                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
+              >
+                How It Works
+              </Link>
               <Link
                 href="/pricing"
                 className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
@@ -46,11 +58,31 @@ const Navigation = () => {
                   </button>
                   <div className="absolute right-0 w-48 mt-2 py-2 bg-white dark:bg-gray-800 rounded-md shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                     <Link
+                      href="/dashboard"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/consultations"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      My Consultations
+                    </Link>
+                    <Link
                       href="/profile"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
-                      Profile
+                      Profile Settings
                     </Link>
+                    {user.isExpert && (
+                      <Link
+                        href="/expert-dashboard"
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Expert Dashboard
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
