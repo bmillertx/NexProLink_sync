@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
-import { SunIcon, MoonIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
+import { SunIcon, MoonIcon, Bars3Icon as MenuIcon, XMarkIcon as XIcon } from '@heroicons/react/24/outline';
 
 const Header = () => {
   const { theme, setTheme } = useTheme();
