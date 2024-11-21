@@ -20,6 +20,7 @@ export default function DashboardTabs({ tabs }: DashboardTabsProps) {
           {tabs.map((tab) => (
             <Tab
               key={tab.name}
+              data-tab={tab.name.toLowerCase()}
               className={({ selected }) =>
                 classNames(
                   'w-full rounded-lg py-2.5 text-sm font-medium leading-5',

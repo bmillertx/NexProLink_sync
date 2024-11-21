@@ -4,11 +4,13 @@ import {
   CalendarIcon,
   ChatBubbleLeftRightIcon,
   UserCircleIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import DashboardTabs from './shared/DashboardTabs';
 import AppointmentsTab from './client/AppointmentsTab';
 import MessagesTab from './client/MessagesTab';
 import ProfileTab from './client/ProfileTab';
+import SettingsTab from './client/SettingsTab';
 
 interface ClientDashboardProps {
   profile: UserProfile | null;
@@ -30,6 +32,11 @@ export default function ClientDashboard({ profile }: ClientDashboardProps) {
       name: 'Profile',
       icon: UserCircleIcon,
       content: <ProfileTab profile={profile} />,
+    },
+    {
+      name: 'Settings',
+      icon: Cog6ToothIcon,
+      content: <SettingsTab />,
     },
   ];
 
