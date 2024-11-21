@@ -40,6 +40,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       });
 
+      // Add the helper to window object for debugging
+      if (process.env.NODE_ENV === 'development') {
+        (window as any).signInWithGoogle = async () => {
+          try {
+            await authService.googleSignIn();
+            console.log('Google sign-in successful!');
+          } catch (error) {
+            console.error('Google sign-in failed:', error);
+          }
+        };
+      }
+
       return () => unsubscribe();
     } else {
       setLoading(false);
@@ -56,12 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (
-    email: string,
-    password: string,
-    displayName: string,
-    userType: 'client' | 'expert'
-  ) => {
+  const register = async (email: string, password: string, displayName: string, userType: 'client' | 'expert') => {
     try {
       setError(null);
       await authService.register(email, password, displayName, userType);
@@ -75,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setError(null);
       await authService.logout();
+      setUser(null);
+      setUserProfile(null);
     } catch (error: any) {
       setError(error.message);
       throw error;
@@ -91,22 +100,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userProfile,
-        loading,
-        error,
-        login,
-        register,
-        logout,
-        resetPassword,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    userProfile,
+    loading,
+    error,
+    login,
+    register,
+    logout,
+    resetPassword,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
