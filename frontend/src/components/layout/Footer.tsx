@@ -1,6 +1,10 @@
 import Link from 'next/link';
+import { useState } from 'react';
+import ContactModal from '../modals/ContactModal';
 
 const Footer = () => {
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+
   return (
     <footer className="bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -42,14 +46,12 @@ const Footer = () => {
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Support</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/help" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
+                <button
+                  onClick={() => setIsContactModalOpen(true)}
+                  className="text-gray-500 dark:text-gray-400 hover:text-primary-500"
+                >
                   Contact Us
-                </Link>
+                </button>
               </li>
               <li>
                 <Link href="/admin" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
@@ -84,6 +86,12 @@ const Footer = () => {
           </p>
         </div>
       </div>
+
+      {/* Contact Modal */}
+      <ContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
     </footer>
   );
 };
