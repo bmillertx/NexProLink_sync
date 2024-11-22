@@ -8,7 +8,7 @@ const Footer = () => {
   return (
     <footer className="bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
             <Link href="/" className="text-xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
@@ -17,28 +17,6 @@ const Footer = () => {
             <p className="text-gray-500 dark:text-gray-400">
               Connect with verified professionals for expert consultations.
             </p>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Quick Links</h3>
-            <ul className="mt-4 space-y-2">
-              <li>
-                <Link href="/find-professional" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
-                  Find a Professional
-                </Link>
-              </li>
-              <li>
-                <Link href="/become-contributor" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
-                  Become a Contributor
-                </Link>
-              </li>
-              <li>
-                <Link href="/pricing" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
-                  Pricing
-                </Link>
-              </li>
-            </ul>
           </div>
 
           {/* Support */}
