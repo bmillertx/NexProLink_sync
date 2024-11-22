@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useRouter } from 'next/router';
 import { ArrowRightIcon, ChatBubbleLeftRightIcon as ChatAltIcon, ClockIcon, BanknotesIcon as CashIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import TestimonialCarousel from '../components/testimonials/TestimonialCarousel';
@@ -91,13 +92,25 @@ const onlineContributors = [
 
 export default function Home() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('signup');
+  const [authModalView, setAuthModalView] = useState<'signin' | 'signup'>('signin');
   const { user } = useAuth();
+  const router = useRouter();
 
-  const handleAuthClick = (view: 'login' | 'signup') => {
+  useEffect(() => {
+    if (user) {
+      router.replace('/experts');
+    }
+  }, [user, router]);
+
+  const handleAuthClick = (view: 'signin' | 'signup') => {
     setAuthModalView(view);
     setIsAuthModalOpen(true);
   };
+
+  // If user is authenticated, don't render anything while redirecting
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="relative">
@@ -120,23 +133,13 @@ export default function Home() {
               From electricians to professors, get instant access to verified professionals for personalized consultations.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              {user ? (
-                <button
-                  onClick={() => window.location.href = '/find-professional'}
-                  className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 md:text-lg"
-                >
-                  Find a Professional
-                  <ArrowRightIcon className="ml-2 h-5 w-5" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleAuthClick('signup')}
-                  className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 md:text-lg"
-                >
-                  Get Started
-                  <ArrowRightIcon className="ml-2 h-5 w-5" />
-                </button>
-              )}
+              <button
+                onClick={() => handleAuthClick('signup')}
+                className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 md:text-lg"
+              >
+                Get Started
+                <ArrowRightIcon className="ml-2 h-5 w-5" />
+              </button>
               <button
                 onClick={() => handleAuthClick('signup')}
                 className="inline-flex items-center px-8 py-3 border border-primary-400 text-base font-medium rounded-md text-primary-100 hover:bg-primary-800 md:text-lg"

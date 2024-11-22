@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['randomuser.me'],
+    domains: ['randomuser.me', 'images.unsplash.com'],
   },
   webpack: (config) => {
     config.resolve.alias = {
@@ -11,6 +11,13 @@ const nextConfig = {
     };
     return config;
   },
+  env: {
+    MOCK_AUTH: 'true'
+  },
+  // Development server configuration
+  serverRuntimeConfig: {
+    port: 3004
+  }
 }
 
 module.exports = nextConfig

@@ -1,13 +1,78 @@
-import { NextPage } from 'next';
+import type { NextPage } from 'next';
 import { useState, useEffect } from 'react';
-import { MagnifyingGlassIcon, CalendarIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import {
+  MagnifyingGlassIcon,
+  VideoCameraIcon,
+  CalendarIcon,
+  ChatBubbleLeftIcon,
+  AcademicCapIcon,
+  BriefcaseIcon,
+  HeartIcon,
+  MusicalNoteIcon,
+  BeakerIcon,
+  PaintBrushIcon
+} from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
 import { ExpertCard } from '../components/experts/ExpertCard';
 import { ExpertFilters } from '../components/experts/ExpertFilters';
-import { TopContributors } from '../components/experts/TopContributors';
-import { SpecialtiesGrid } from '../components/experts/SpecialtiesGrid';
 import { Expert } from '../types/expert';
+import { useRouter } from 'next/router';
 
-// Mock data for experts
+// Enhanced categories for professionals
+const professionalCategories = [
+  {
+    id: 'education',
+    name: 'Education',
+    icon: AcademicCapIcon,
+    color: 'bg-blue-200 hover:bg-blue-300 text-blue-900',
+    examples: ['Teachers', 'Tutors', 'Professors']
+  },
+  {
+    id: 'business',
+    name: 'Business',
+    icon: BriefcaseIcon,
+    color: 'bg-emerald-200 hover:bg-emerald-300 text-emerald-900',
+    examples: ['Consultants', 'Coaches', 'Mentors']
+  },
+  {
+    id: 'health',
+    name: 'Health',
+    icon: HeartIcon,
+    color: 'bg-rose-200 hover:bg-rose-300 text-rose-900',
+    examples: ['Trainers', 'Nutritionists', 'Therapists']
+  },
+  {
+    id: 'technology',
+    name: 'Technology',
+    icon: BeakerIcon,
+    color: 'bg-indigo-200 hover:bg-indigo-300 text-indigo-900',
+    examples: ['Developers', 'Designers', 'Engineers']
+  },
+  {
+    id: 'arts',
+    name: 'Arts',
+    icon: PaintBrushIcon,
+    color: 'bg-purple-200 hover:bg-purple-300 text-purple-900',
+    examples: ['Artists', 'Musicians', 'Photographers']
+  },
+  {
+    id: 'music',
+    name: 'Music',
+    icon: MusicalNoteIcon,
+    color: 'bg-amber-200 hover:bg-amber-300 text-amber-900',
+    examples: ['Musicians', 'Composers', 'Producers']
+  },
+  {
+    id: 'culinary',
+    name: 'Culinary',
+    icon: VideoCameraIcon,
+    color: 'bg-orange-200 hover:bg-orange-300 text-orange-900',
+    examples: ['Chefs', 'Food Stylists', 'Food Bloggers']
+  }
+];
+
+// Enhanced mock data with diverse experts
 const mockExperts: Expert[] = [
   {
     id: 1,
@@ -17,96 +82,131 @@ const mockExperts: Expert[] = [
     reviews: 128,
     hourlyRate: 150,
     availability: 'Available Now',
-    specialties: ['System Design', 'Cloud Architecture', 'Scalability'],
+    specialties: ['System Design', 'Cloud Architecture', 'Microservices'],
     imageUrl: 'https://randomuser.me/api/portraits/women/1.jpg',
     experienceLevel: 'Expert (8+ years)',
-    description: 'Experienced software architect specializing in distributed systems and cloud-native applications.',
+    description: 'Experienced software architect specializing in scalable systems.',
     languages: ['English', 'Spanish'],
     location: 'San Francisco, CA',
     timezone: 'PST',
-    education: [
-      {
-        degree: 'Ph.D. in Computer Science',
-        institution: 'Stanford University',
-        year: 2015,
-      },
-    ],
-    certifications: [
-      {
-        name: 'AWS Solutions Architect Professional',
-        issuer: 'Amazon Web Services',
-        year: 2022,
-      },
-    ],
+    category: 'technology'
   },
   {
     id: 2,
-    name: 'Michael Chen',
-    title: 'Full Stack Development Consultant',
+    name: 'Chen Wei',
+    title: 'Data Science & ML Expert',
     rating: 4.8,
     reviews: 93,
     hourlyRate: 120,
     availability: 'Available in 1 hour',
-    specialties: ['React', 'Node.js', 'AWS', 'TypeScript'],
+    specialties: ['Machine Learning', 'Python', 'Deep Learning'],
     imageUrl: 'https://randomuser.me/api/portraits/men/2.jpg',
     experienceLevel: 'Senior (5-8 years)',
-    description: 'Full stack developer with expertise in modern web technologies and cloud infrastructure.',
+    description: 'Data scientist with focus on practical ML applications.',
     languages: ['English', 'Mandarin'],
     location: 'New York, NY',
     timezone: 'EST',
+    category: 'technology'
   },
   {
     id: 3,
-    name: 'Emily Rodriguez',
-    title: 'Mobile Development Specialist',
+    name: 'Maria Rodriguez',
+    title: 'Business Strategy Consultant',
     rating: 4.7,
     reviews: 76,
-    hourlyRate: 100,
+    hourlyRate: 200,
     availability: 'Available Today',
-    specialties: ['iOS', 'Android', 'React Native', 'Flutter'],
+    specialties: ['Strategy', 'Growth', 'Operations'],
     imageUrl: 'https://randomuser.me/api/portraits/women/3.jpg',
-    experienceLevel: 'Senior (5-8 years)',
-    description: 'Mobile development expert with experience in both native and cross-platform development.',
-    languages: ['English', 'Portuguese'],
+    experienceLevel: 'Expert (8+ years)',
+    description: 'Strategic advisor for startups and enterprises.',
+    languages: ['English', 'Spanish'],
     location: 'Miami, FL',
     timezone: 'EST',
+    category: 'business'
   },
   {
     id: 4,
-    name: 'James Wilson',
-    title: 'DevOps & Cloud Infrastructure Expert',
+    name: 'Dr. James Wilson',
+    title: 'Clinical Psychologist',
     rating: 4.9,
     reviews: 112,
-    hourlyRate: 140,
-    availability: 'Available Now',
-    specialties: ['DevOps', 'Kubernetes', 'AWS', 'Azure'],
+    hourlyRate: 180,
+    availability: 'Next Week',
+    specialties: ['CBT', 'Anxiety', 'Depression'],
     imageUrl: 'https://randomuser.me/api/portraits/men/4.jpg',
     experienceLevel: 'Expert (8+ years)',
-    description: 'DevOps engineer specializing in cloud infrastructure and automation.',
+    description: 'Licensed psychologist specializing in anxiety and depression.',
     languages: ['English'],
+    location: 'Chicago, IL',
+    timezone: 'CST',
+    category: 'health'
+  },
+  {
+    id: 5,
+    name: 'Aisha Patel',
+    title: 'UI/UX Design Lead',
+    rating: 4.8,
+    reviews: 89,
+    hourlyRate: 140,
+    availability: 'Available Now',
+    specialties: ['UI Design', 'User Research', 'Prototyping'],
+    imageUrl: 'https://randomuser.me/api/portraits/women/5.jpg',
+    experienceLevel: 'Senior (5-8 years)',
+    description: 'Design leader focused on user-centered experiences.',
+    languages: ['English', 'Hindi'],
     location: 'Seattle, WA',
     timezone: 'PST',
+    category: 'technology'
   },
-  // Add more mock experts as needed
+  {
+    id: 6,
+    name: 'Yuki Tanaka',
+    title: 'Music Production Expert',
+    rating: 4.7,
+    reviews: 64,
+    hourlyRate: 90,
+    availability: 'Available Now',
+    specialties: ['Production', 'Mixing', 'Composition'],
+    imageUrl: 'https://randomuser.me/api/portraits/women/6.jpg',
+    experienceLevel: 'Senior (5-8 years)',
+    description: 'Professional music producer and composer.',
+    languages: ['English', 'Japanese'],
+    location: 'Los Angeles, CA',
+    timezone: 'PST',
+    category: 'music'
+  },
+  {
+    id: 7,
+    name: 'Chef Mario Romano',
+    title: 'Master Chef & Culinary Instructor',
+    rating: 4.8,
+    reviews: 95,
+    hourlyRate: 120,
+    availability: 'Available Now',
+    specialties: ['Italian Cuisine', 'Pastry', 'Wine Pairing', 'Restaurant Management'],
+    imageUrl: 'https://randomuser.me/api/portraits/men/8.jpg',
+    experienceLevel: 'Master Chef (20+ years)',
+    description: 'Michelin-starred chef specializing in authentic Italian cuisine.',
+    languages: ['English', 'Italian'],
+    location: 'New York, NY',
+    timezone: 'EST',
+    category: 'culinary'
+  }
 ];
 
 const ExpertsPage: NextPage = () => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     specialties: [],
-    priceRange: [0, 500],
-    availability: [],
+    priceRange: [0, 1000],
     rating: 0,
     experienceLevel: [],
   });
   const [filteredExperts, setFilteredExperts] = useState<Expert[]>(mockExperts);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
-
-  // Get top contributors (experts with highest ratings)
-  const topContributors = [...mockExperts]
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 6);
 
   useEffect(() => {
     setIsLoading(true);
@@ -121,19 +221,14 @@ const ExpertsPage: NextPage = () => {
             s.toLowerCase().includes(searchQuery.toLowerCase())
           );
 
-        const matchesSpecialties =
-          selectedSpecialties.length === 0 ||
-          expert.specialties.some((s) => selectedSpecialties.includes(s));
+        const matchesCategory =
+          !selectedCategory || expert.category === selectedCategory;
+
+        const matchesRating = expert.rating >= filters.rating;
 
         const matchesPrice =
           expert.hourlyRate >= filters.priceRange[0] &&
           expert.hourlyRate <= filters.priceRange[1];
-
-        const matchesAvailability =
-          filters.availability.length === 0 ||
-          filters.availability.includes(expert.availability);
-
-        const matchesRating = expert.rating >= filters.rating;
 
         const matchesExperience =
           filters.experienceLevel.length === 0 ||
@@ -141,10 +236,9 @@ const ExpertsPage: NextPage = () => {
 
         return (
           matchesSearch &&
-          matchesSpecialties &&
-          matchesPrice &&
-          matchesAvailability &&
+          matchesCategory &&
           matchesRating &&
+          matchesPrice &&
           matchesExperience
         );
       });
@@ -154,143 +248,156 @@ const ExpertsPage: NextPage = () => {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, filters, selectedSpecialties]);
-
-  const handleSpecialtyClick = (specialty: string) => {
-    setSelectedSpecialties((prev) =>
-      prev.includes(specialty)
-        ? prev.filter((s) => s !== specialty)
-        : [...prev, specialty]
-    );
-  };
-
-  const handleContact = (expert: Expert) => {
-    // Implement contact functionality
-    console.log('Contacting expert:', expert.name);
-  };
+  }, [searchQuery, selectedCategory, filters]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Top Contributors Section */}
-      <TopContributors experts={topContributors} />
-
-      {/* Search Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold mb-4">Find Your Expert</h1>
-          <p className="text-lg mb-8 text-gray-100">
-            Connect with top professionals in software development, design, and technology
-          </p>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-grow">
-              <div className="relative">
-                <input
-                  type="text"
-                  className="w-full px-4 py-3 rounded-lg text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Search by expertise, name, or keyword..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <MagnifyingGlassIcon className="absolute right-3 top-3 h-6 w-6 text-gray-400" />
+      {/* Hero Section */}
+      <div className="relative h-[50vh] overflow-hidden bg-gradient-to-r from-primary-600 to-primary-800">
+        <div className="max-w-7xl mx-auto px-4 h-full flex items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-white max-w-3xl"
+          >
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+              Find Your Perfect Expert
+            </h1>
+            <p className="text-lg sm:text-xl mb-8 text-gray-100">
+              Connect with professionals across various fields for personalized guidance and expertise.
+            </p>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name, title, or specialty..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-6 py-4 rounded-lg text-gray-900 bg-white shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <MagnifyingGlassIcon className="h-6 w-6" />
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
-                  {mockExperts.length}+
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Expert Consultants
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
-                  24/7
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Global Availability
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
-                  100%
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Satisfaction Guaranteed
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Categories Grid */}
+      <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-30">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {professionalCategories.map((category) => (
+            <motion.button
+              key={category.id}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedCategory(category.id === selectedCategory ? null : category.id)}
+              className={`${
+                category.id === selectedCategory
+                  ? 'ring-2 ring-primary-500 shadow-lg ' + category.color
+                  : category.color + ' shadow-md'
+              } rounded-xl p-4 transition-all duration-200`}
+            >
+              <category.icon className="h-6 w-6 mx-auto mb-2" />
+              <div className="text-sm font-medium text-center">{category.name}</div>
+            </motion.button>
+          ))}
         </div>
-      </div>
-
-      {/* Specialties Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SpecialtiesGrid
-          onSpecialtyClick={handleSpecialtyClick}
-          selectedSpecialties={selectedSpecialties}
-        />
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <ExpertFilters onFilterChange={setFilters} />
+            <ExpertFilters filters={filters} setFilters={setFilters} />
           </div>
 
-          {/* Expert Cards */}
+          {/* Expert Cards Grid */}
           <div className="lg:col-span-3">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-              </div>
-            ) : filteredExperts.length === 0 ? (
-              <div className="text-center py-12">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No experts found
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Try adjusting your search criteria
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-6">
-                {filteredExperts.map((expert) => (
-                  <ExpertCard
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {isLoading ? (
+                // Loading skeletons
+                Array.from({ length: 6 }).map((_, index) => (
+                  <motion.div
+                    key={index}
+                    className="animate-pulse bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="h-16 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                // Expert cards
+                filteredExperts.map((expert) => (
+                  <motion.div
                     key={expert.id}
-                    expert={expert}
-                    onContact={handleContact}
-                  />
-                ))}
-              </div>
-            )}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => router.push(`/experts/${expert.id}`)}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={expert.imageUrl}
+                          alt={expert.name}
+                          className="h-16 w-16 rounded-full object-cover"
+                        />
+                        <div className="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+                          {expert.rating} ★
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                          {expert.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          {expert.title}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {expert.specialties.slice(0, 2).map((specialty) => (
+                            <span
+                              key={specialty}
+                              className="inline-block px-2 py-1 text-xs bg-primary-50 text-primary-600 dark:bg-primary-900 dark:text-primary-100 rounded-full"
+                            >
+                              {specialty}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-primary-600 dark:text-primary-400">
+                            ${expert.hourlyRate}/hr
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            {expert.availability}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-8 right-8 flex flex-col gap-4">
-        <button className="bg-primary-600 text-white p-3 rounded-full shadow-lg hover:bg-primary-700 transition-colors">
-          <CalendarIcon className="h-6 w-6" />
-        </button>
-        <button className="bg-primary-600 text-white p-3 rounded-full shadow-lg hover:bg-primary-700 transition-colors">
-          <ChatBubbleLeftIcon className="h-6 w-6" />
-        </button>
-      </div>
+      {/* Floating Action Button */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+        className="fixed bottom-8 right-8 bg-primary-600 text-white p-4 rounded-full shadow-lg hover:bg-primary-700"
+      >
+        <ChatBubbleLeftIcon className="h-6 w-6" />
+      </motion.button>
     </div>
   );
 };
