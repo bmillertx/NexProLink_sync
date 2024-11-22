@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '@/context/ThemeContext';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Switch } from '@headlessui/react';
 import {
   BellIcon,

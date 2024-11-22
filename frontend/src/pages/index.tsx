@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import TestimonialCarousel from '../components/testimonials/TestimonialCarousel';
 import { VideoCameraIcon, CalendarIcon, ShieldCheckIcon, CurrencyDollarIcon, UserGroupIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import AuthModal from '@/components/auth/AuthModal';
 
 export default function Home() {

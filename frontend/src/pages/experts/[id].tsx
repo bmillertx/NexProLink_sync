@@ -3,7 +3,7 @@ import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import ExpertProfile from '@/components/experts/ExpertProfile';
 import BookingModal from '@/components/booking/BookingModal';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 // Mock data examples - Replace with actual API call
 const mockExperts = {

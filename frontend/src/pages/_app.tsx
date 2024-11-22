@@ -1,15 +1,24 @@
-import { ThemeProvider } from 'next-themes';
+import '@/styles/globals.css';
 import type { AppProps } from 'next/app';
-import Layout from '../components/layout/Layout';
-import '../styles/globals.css';
-import '../styles/calendar.css';  // Add calendar styles globally
+import { AuthProvider } from '@/hooks/useAuth';
+import { useEffect } from 'react';
+import { app } from '@/config/firebase';
+import Layout from '@/components/layout/Layout';
+import { ThemeProvider } from 'next-themes';
+
+// Ensure Firebase is initialized
+if (!app) {
+  throw new Error('Firebase failed to initialize. Check your environment variables.');
+}
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider attribute="class">
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      <AuthProvider>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

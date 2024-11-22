@@ -1,114 +1,193 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
-import AuthModal from '@/components/auth/AuthModal';
-import { useTheme } from 'next-themes';
-import { SunIcon, MoonIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { 
+  ArrowRightOnRectangleIcon as LoginIcon, 
+  ArrowLeftOnRectangleIcon as LogoutIcon, 
+  Bars3Icon as MenuIcon, 
+  UserPlusIcon as UserAddIcon, 
+  XMarkIcon as XIcon 
+} from '@heroicons/react/24/outline';
+import { useAuth } from '@/hooks/useAuth';
 
-const Navigation = () => {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+export default function Navigation() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
+  const router = useRouter();
 
-  const handleLogout = async () => {
+  const toggleMenu = () => setIsOpen(!isOpen);
+
+  const handleSignOut = async () => {
     try {
-      await logout();
+      await signOut();
+      router.push('/');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Error signing out:', error);
     }
   };
 
+  const navigationItems = [
+    { name: 'Home', href: '/' },
+    { name: 'Find Consultants', href: '/consultants' },
+    { name: 'How It Works', href: '/#how-it-works' },
+  ];
+
+  const authenticatedItems = profile?.role === 'consultant' 
+    ? [
+        { name: 'Dashboard', href: '/dashboard' },
+        { name: 'My Schedule', href: '/schedule' },
+        { name: 'Profile', href: '/profile' },
+      ]
+    : [
+        { name: 'My Consultations', href: '/consultations' },
+        { name: 'Profile', href: '/profile' },
+      ];
+
   return (
-    <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <Link href="/" className="flex items-center space-x-2">
-                <svg
-                  className="w-8 h-8 text-primary-600 dark:text-primary-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-                <span className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
-                  NexProLink
-                </span>
+    <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link href="/">
+                <span className="text-2xl font-bold text-indigo-600">NexProLink</span>
               </Link>
             </div>
-
-            <div className="hidden md:flex md:items-center md:space-x-6">
-              <Link
-                href="/experts"
-                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
-              >
-                Find Experts
-              </Link>
-              <Link
-                href="/how-it-works"
-                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
-              >
-                Getting Started
-              </Link>
-              {user ? (
-                <div className="relative group">
-                  <button className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500">
-                    <UserCircleIcon className="h-6 w-6" />
-                    <span>{user.displayName || user.email}</span>
-                  </button>
-                  <div className="absolute right-0 w-48 mt-2 py-2 bg-white dark:bg-gray-800 rounded-md shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                    <Link
-                      href="/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Dashboard
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium
+                    ${
+                      router.pathname === item.href
+                        ? 'border-indigo-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
                 >
-                  Sign In
-                </button>
-              )}
-
-              <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? (
-                  <SunIcon className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <MoonIcon className="h-5 w-5 text-gray-600" />
-                )}
-              </button>
+                  {item.name}
+                </Link>
+              ))}
             </div>
           </div>
+
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            {user ? (
+              <div className="flex items-center space-x-4">
+                {authenticatedItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  <LogoutIcon className="h-5 w-5 mr-1" />
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link
+                  href="/auth/signin"
+                  className="flex items-center text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  <LoginIcon className="h-5 w-5 mr-1" />
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="flex items-center text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  <UserAddIcon className="h-5 w-5 mr-1" />
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center sm:hidden">
+            <button
+              onClick={toggleMenu}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            >
+              {isOpen ? (
+                <XIcon className="block h-6 w-6" />
+              ) : (
+                <MenuIcon className="block h-6 w-6" />
+              )}
+            </button>
+          </div>
         </div>
-      </nav>
+      </div>
 
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
-    </>
+      {/* Mobile menu */}
+      <div className={`${isOpen ? 'block' : 'hidden'} sm:hidden`}>
+        <div className="pt-2 pb-3 space-y-1">
+          {navigationItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium
+                ${
+                  router.pathname === item.href
+                    ? 'border-indigo-500 text-indigo-700 bg-indigo-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                }`}
+              onClick={() => setIsOpen(false)}
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+        <div className="pt-4 pb-3 border-t border-gray-200">
+          {user ? (
+            <div className="space-y-1">
+              {authenticatedItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+              <button
+                onClick={() => {
+                  handleSignOut();
+                  setIsOpen(false);
+                }}
+                className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <Link
+                href="/auth/signin"
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300"
+                onClick={() => setIsOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/signup"
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300"
+                onClick={() => setIsOpen(false)}
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
   );
-};
-
-export default Navigation;
+}

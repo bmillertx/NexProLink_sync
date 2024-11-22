@@ -2,9 +2,10 @@ import { motion } from 'framer-motion';
 import { StarIcon, CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { VideoCameraIcon, CalendarIcon, ChatBubbleLeftIcon, ClockIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { Expert } from '@/types/expert';
+import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { Expert } from '@/types/expert';
 
 interface ExpertCardProps {
   expert: Expert;

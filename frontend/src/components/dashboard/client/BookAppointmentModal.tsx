@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { CalendarIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useTheme } from '@/context/ThemeContext';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { createAppointment, Appointment } from '@/services/appointments';
 import { Expert, getAvailableTimeSlots } from '@/services/experts';
 import toast from 'react-hot-toast';

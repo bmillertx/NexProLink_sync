@@ -10,7 +10,7 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useTheme } from '@/context/ThemeContext';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Appointment, getClientAppointments, updateAppointment } from '@/services/appointments';
 import { Expert, getExperts } from '@/services/experts';
 import toast from 'react-hot-toast';

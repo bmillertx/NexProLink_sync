@@ -8,7 +8,7 @@ import {
   UserCircleIcon,
   CogIcon,
 } from '@heroicons/react/24/outline';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/context/ThemeContext';
 
 interface DashboardLayoutProps {
