@@ -69,7 +69,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
+                <Link href="/legal/terms-of-service" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
                   Terms of Service
                 </Link>
               </li>
@@ -85,7 +85,7 @@ const Footer = () => {
         {/* Bottom section */}
         <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
           <p className="text-gray-400 text-sm text-center">
-            © {new Date().getFullYear()} NexProLink. All rights reserved.
+            &copy; {new Date().getFullYear()} NexProLink. All rights reserved.
           </p>
         </div>
       </div>
