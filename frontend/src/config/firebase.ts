@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getStorage } from 'firebase/storage';
 import { GoogleAuthProvider } from 'firebase/auth';
@@ -32,7 +32,21 @@ googleProvider.setCustomParameters({
 
 // Initialize Analytics only in browser environment and if supported
 let analytics = null;
+
+// Enable offline persistence
 if (typeof window !== 'undefined') {
+  enableIndexedDbPersistence(db, {
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED
+  }).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      // Multiple tabs open, persistence can only be enabled in one tab at a time.
+      console.warn('Multiple tabs open, offline persistence disabled');
+    } else if (err.code === 'unimplemented') {
+      // The current browser doesn't support persistence
+      console.warn('Current browser does not support offline persistence');
+    }
+  });
+
   isSupported().then(supported => {
     if (supported) {
       analytics = getAnalytics(app);

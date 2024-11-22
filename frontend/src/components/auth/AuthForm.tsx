@@ -3,6 +3,9 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
 import { FcGoogle } from 'react-icons/fc';
 import { validatePassword } from '@/utils/validation';
+import { rateLimitService } from '@/services/rate-limit/rate-limit.service';
+import { errorService } from '@/services/error/error.service';
+import { performanceService } from '@/services/monitoring/performance.service';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -33,39 +36,48 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setError('');
 
     try {
-      if (mode === 'signup') {
-        // Validate password strength
-        const passwordError = validatePassword(formData.password);
-        if (passwordError) {
-          throw new Error(passwordError);
-        }
+      // Check rate limiting for auth attempts
+      const canProceed = await rateLimitService.checkRateLimit(
+        formData.email,
+        'auth'
+      );
+      
+      if (!canProceed) {
+        throw new Error('Too many login attempts. Please try again later.');
+      }
 
-        await signUp(
-          formData.email,
-          formData.password,
-          formData.displayName,
-          formData.role
-        );
-        // Show verification message instead of redirecting
-        setError('Please check your email to verify your account before signing in.');
-        return;
-      } else {
-        await signIn(formData.email, formData.password);
-        router.push('/dashboard');
-      }
-    } catch (err: any) {
-      // Handle specific authentication errors
-      if (err.code === 'auth/email-already-in-use') {
-        setError('An account with this email already exists. Please sign in instead.');
-      } else if (err.code === 'auth/wrong-password') {
-        setError('Incorrect password. Please try again or reset your password.');
-      } else if (err.code === 'auth/user-not-found') {
-        setError('No account found with this email. Please sign up first.');
-      } else if (err.code === 'auth/too-many-requests') {
-        setError('Too many failed attempts. Please try again later or reset your password.');
-      } else {
-        setError(err.message || 'An error occurred during authentication');
-      }
+      await performanceService.monitorFunction(
+        `auth_${mode}`,
+        async () => {
+          if (mode === 'signup') {
+            // Validate password strength
+            const passwordError = validatePassword(formData.password);
+            if (passwordError) {
+              throw new Error(passwordError);
+            }
+
+            await signUp(
+              formData.email,
+              formData.password,
+              formData.displayName,
+              formData.role
+            );
+            // Show verification message instead of redirecting
+            setError('Please check your email to verify your account before signing in.');
+            return;
+          }
+
+          await signIn(formData.email, formData.password);
+          router.push('/dashboard');
+        }
+      );
+    } catch (err) {
+      errorService.handleError(err, {
+        context: 'auth',
+        action: mode,
+        email: formData.email
+      });
+      setError(errorService.getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reusable functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isConsultant() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'consultant';
+    }
+
+    function isClient() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'client';
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() 
+                   && isEmailVerified()
+                   && request.resource.data.role in ['client', 'consultant'];
+      allow update: if isAuthenticated() 
+                   && isEmailVerified()
+                   && isOwner(userId);
+      allow delete: if false; // Prevent user deletion through client-side
+    }
+
+    // Consultants collection
+    match /consultants/{consultantId} {
+      allow read: if true; // Public profiles
+      allow create: if isAuthenticated() 
+                   && isEmailVerified()
+                   && isOwner(consultantId)
+                   && isConsultant();
+      allow update: if isAuthenticated()
+                   && isEmailVerified()
+                   && isOwner(consultantId)
+                   && isConsultant();
+      allow delete: if false;
+    }
+
+    // Appointments collection
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() 
+                  && (
+                    request.auth.uid == resource.data.clientId
+                    || request.auth.uid == resource.data.consultantId
+                  );
+      allow create: if isAuthenticated()
+                   && isEmailVerified()
+                   && (isClient() || isConsultant());
+      allow update: if isAuthenticated()
+                   && isEmailVerified()
+                   && (
+                     request.auth.uid == resource.data.clientId
+                     || request.auth.uid == resource.data.consultantId
+                   );
+      allow delete: if isAuthenticated()
+                   && (
+                     request.auth.uid == resource.data.clientId
+                     || request.auth.uid == resource.data.consultantId
+                   );
+    }
+
+    // Messages collection
+    match /messages/{messageId} {
+      allow read: if isAuthenticated()
+                  && (
+                    request.auth.uid == resource.data.senderId
+                    || request.auth.uid == resource.data.receiverId
+                  );
+      allow create: if isAuthenticated()
+                   && isEmailVerified()
+                   && request.auth.uid == request.resource.data.senderId;
+      allow update: if false; // Messages cannot be edited
+      allow delete: if false; // Messages cannot be deleted
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated()
+                   && isEmailVerified()
+                   && isClient()
+                   && request.auth.uid == request.resource.data.clientId;
+      allow update: if isAuthenticated()
+                   && isEmailVerified()
+                   && isClient()
+                   && request.auth.uid == resource.data.clientId;
+      allow delete: if false; // Reviews cannot be deleted
+    }
+
+    // Settings collection
+    match /settings/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() 
+                  && isEmailVerified()
+                  && isOwner(userId);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

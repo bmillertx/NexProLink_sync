@@ -4,11 +4,20 @@ const nextConfig = {
   images: {
     domains: ['randomuser.me', 'images.unsplash.com'],
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': require('path').resolve(__dirname, 'src'),
     };
+
+    // Handle RxJS
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'rxjs': require.resolve('rxjs'),
+      };
+    }
+
     return config;
   },
   env: {
