@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
 import { FcGoogle } from 'react-icons/fc';
+import { validatePassword } from '@/utils/validation';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -9,9 +10,10 @@ interface AuthFormProps {
 
 export default function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [resetSent, setResetSent] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -22,6 +24,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(''); // Clear error when user types
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,19 +34,38 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (mode === 'signup') {
+        // Validate password strength
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+          throw new Error(passwordError);
+        }
+
         await signUp(
           formData.email,
           formData.password,
           formData.displayName,
           formData.role
         );
-        router.push('/dashboard');
+        // Show verification message instead of redirecting
+        setError('Please check your email to verify your account before signing in.');
+        return;
       } else {
         await signIn(formData.email, formData.password);
         router.push('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during authentication');
+      // Handle specific authentication errors
+      if (err.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Incorrect password. Please try again or reset your password.');
+      } else if (err.code === 'auth/user-not-found') {
+        setError('No account found with this email. Please sign up first.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later or reset your password.');
+      } else {
+        setError(err.message || 'An error occurred during authentication');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,12 +84,35 @@ export default function AuthForm({ mode }: AuthFormProps) {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await resetPassword(formData.email);
+      setResetSent(true);
+      setError('');
+    } catch (err: any) {
+      setError(err.message || 'Error sending password reset email');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           {mode === 'signin' ? 'Sign in to your account' : 'Create your account'}
         </h2>
+        {mode === 'signup' && (
+          <p className="mt-2 text-center text-sm text-gray-600">
+            After signing up, you'll need to verify your email before signing in.
+          </p>
+        )}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -146,11 +191,42 @@ export default function AuthForm({ mode }: AuthFormProps) {
               </div>
             )}
 
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  >
+                    Forgot your password?
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {resetSent && (
+              <div className="rounded-md bg-green-50 p-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-green-800">
+                      Password reset email sent! Please check your inbox.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="rounded-md bg-red-50 p-4">
                 <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                    <p className="text-sm font-medium text-red-800">{error}</p>
                   </div>
                 </div>
               </div>

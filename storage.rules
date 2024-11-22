@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Reusable functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidContentType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+    
+    function isValidFileSize() {
+      return request.resource.size < 5 * 1024 * 1024; // 5MB limit
+    }
+
+    // Profile images
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() 
+                   && isEmailVerified()
+                   && isOwner(userId)
+                   && isValidContentType()
+                   && isValidFileSize();
+    }
+
+    // Consultant documents
+    match /consultants/{userId}/documents/{fileName} {
+      allow read: if isAuthenticated() && isEmailVerified();
+      allow write: if isAuthenticated() 
+                   && isEmailVerified()
+                   && isOwner(userId)
+                   && isValidContentType()
+                   && isValidFileSize();
+    }
+
+    // Consultation attachments
+    match /consultations/{consultationId}/attachments/{fileName} {
+      allow read: if isAuthenticated() 
+                  && isEmailVerified()
+                  && (
+                    exists(/databases/$(database)/documents/consultations/$(consultationId))
+                    && (
+                      request.auth.uid == resource.data.clientId
+                      || request.auth.uid == resource.data.consultantId
+                    )
+                  );
+      allow write: if isAuthenticated()
+                   && isEmailVerified()
+                   && isValidContentType()
+                   && isValidFileSize()
+                   && (
+                     exists(/databases/$(database)/documents/consultations/$(consultationId))
+                     && (
+                       request.auth.uid == resource.data.clientId
+                       || request.auth.uid == resource.data.consultantId
+                     )
+                   );
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

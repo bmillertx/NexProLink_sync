@@ -3,9 +3,11 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
-  User
+  User,
+  GoogleAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/config/firebase';
@@ -16,6 +18,7 @@ export interface UserProfile {
   displayName: string;
   photoURL?: string;
   role: 'client' | 'consultant';
+  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
   // Payment Integration Fields
@@ -68,6 +71,9 @@ class AuthService {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Send email verification
+      await sendEmailVerification(user);
+
       // Update user profile
       await updateProfile(user, { displayName });
 
@@ -78,6 +84,7 @@ class AuthService {
         displayName,
         photoURL: user.photoURL || undefined,
         role,
+        emailVerified: false,
         createdAt: new Date(),
         updatedAt: new Date(),
         // Add professional info if consultant
@@ -90,12 +97,6 @@ class AuthService {
 
       await this.createUserProfile(userProfile);
       
-      // If consultant, initiate Stripe account creation (to be implemented)
-      if (role === 'consultant') {
-        // TODO: Implement Stripe connect account creation
-        // await this.createStripeConnectAccount(userProfile);
-      }
-
       return userProfile;
     } catch (error: any) {
       throw this.handleAuthError(error);
@@ -105,7 +106,45 @@ class AuthService {
   async signIn(email: string, password: string): Promise<UserProfile> {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return await this.getUserProfile(userCredential.user.uid);
+      const user = userCredential.user;
+
+      // Check if email is verified
+      if (!user.emailVerified) {
+        // Resend verification email if needed
+        await sendEmailVerification(user);
+        throw new Error('Please verify your email address. A new verification email has been sent.');
+      }
+
+      return await this.getUserProfile(user.uid);
+    } catch (error: any) {
+      throw this.handleAuthError(error);
+    }
+  }
+
+  async resendVerificationEmail(user: User): Promise<void> {
+    try {
+      await sendEmailVerification(user);
+    } catch (error: any) {
+      throw this.handleAuthError(error);
+    }
+  }
+
+  async verifyEmail(oobCode: string): Promise<void> {
+    try {
+      await auth.applyActionCode(oobCode);
+      
+      // Update user profile in Firestore
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, { 
+          emailVerified: true,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        // Force refresh the user to get the latest emailVerified status
+        await user.reload();
+      }
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
@@ -126,6 +165,7 @@ class AuthService {
           displayName: user.displayName || 'User',
           photoURL: user.photoURL || undefined,
           role: 'client', // Default role for Google sign-in
+          emailVerified: user.emailVerified,
           createdAt: new Date(),
           updatedAt: new Date()
         };
@@ -191,6 +231,12 @@ class AuthService {
       'auth/user-not-found': 'No account found with this email.',
       'auth/wrong-password': 'Incorrect password.',
       'auth/popup-closed-by-user': 'Sign-in popup was closed before completion.',
+      'auth/requires-recent-login': 'Please sign in again to complete this action.',
+      'auth/email-not-verified': 'Please verify your email address.',
+      'auth/invalid-verification-code': 'Invalid verification code.',
+      'auth/invalid-verification-id': 'Invalid verification ID.',
+      'auth/missing-verification-code': 'Missing verification code.',
+      'auth/missing-verification-id': 'Missing verification ID.',
     };
 
     return new Error(errorMessages[error.code] || error.message || 'Authentication failed');

@@ -1,20 +1,21 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { User } from 'firebase/auth';
+import { authService } from '@/services/firebase/auth.service';
+import { UserProfile } from '@/types/user';
 import { auth } from '@/config/firebase';
-import { authService, UserProfile } from '@/services/firebase/auth.service';
 
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string, role: 'client' | 'consultant', professionalInfo?: UserProfile['professionalInfo']) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<UserProfile>;
+  signUp: (email: string, password: string, displayName: string, role: 'client' | 'consultant') => Promise<UserProfile>;
+  signInWithGoogle: () => Promise<UserProfile>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -22,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setUser(user);
       if (user) {
         try {
@@ -44,22 +45,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const userProfile = await authService.signIn(email, password);
     setProfile(userProfile);
+    return userProfile;
   };
 
   const signUp = async (
     email: string,
     password: string,
     displayName: string,
-    role: 'client' | 'consultant',
-    professionalInfo?: UserProfile['professionalInfo']
+    role: 'client' | 'consultant'
   ) => {
-    const userProfile = await authService.signUp(email, password, displayName, role, professionalInfo);
+    const userProfile = await authService.signUp(email, password, displayName, role);
     setProfile(userProfile);
+    return userProfile;
   };
 
   const signInWithGoogle = async () => {
     const userProfile = await authService.signInWithGoogle();
     setProfile(userProfile);
+    return userProfile;
   };
 
   const signOut = async () => {
@@ -88,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
