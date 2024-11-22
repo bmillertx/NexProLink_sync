@@ -94,41 +94,41 @@ const HowItWorks: NextPage = () => {
         </div>
       </div>
 
-      {/* Pricing Example Section */}
-      <div className="py-16 bg-gray-50 dark:bg-gray-800">
+      {/* Pricing & Features Section */}
+      <div id="pricing" className="py-16 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Transparent Pricing
+              Transparent Pricing & Features
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-400">
-              Simple pricing with no hidden fees
+              No hidden fees, no subscriptions - just pay for the time you use
             </p>
           </div>
 
           <div className="max-w-2xl mx-auto bg-white dark:bg-gray-700 rounded-lg shadow-sm p-6 mb-12">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-              Example Calculation
+              Simple Fee Structure
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-300">Expert's Rate</span>
-                <span className="text-gray-900 dark:text-white font-medium">$100/hour</span>
+                <span className="text-gray-900 dark:text-white font-medium">Set by expert</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-300">Platform Fee (15%)</span>
-                <span className="text-gray-900 dark:text-white font-medium">$15/hour</span>
+                <span className="text-gray-600 dark:text-gray-300">Platform Fee</span>
+                <span className="text-gray-900 dark:text-white font-medium">15% of consultation fee</span>
               </div>
               <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-900 dark:text-white font-semibold">Total Client Cost</span>
-                  <span className="text-gray-900 dark:text-white font-semibold">$115/hour</span>
+                  <span className="text-gray-900 dark:text-white font-semibold">Total Cost</span>
+                  <span className="text-gray-900 dark:text-white font-semibold">Expert rate + 15%</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature) => (
               <div
                 key={feature.title}

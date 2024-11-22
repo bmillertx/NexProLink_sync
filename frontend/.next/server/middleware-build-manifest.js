@@ -34,6 +34,11 @@ self.__BUILD_MANIFEST = {
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/experts.js"
+    ],
+    "/how-it-works": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/how-it-works.js"
     ]
   },
   "ampFirstPages": []

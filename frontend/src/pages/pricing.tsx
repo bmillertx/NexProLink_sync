@@ -1,12 +1,14 @@
-import Pricing from '@/components/sections/Pricing';
-import { NextPage } from 'next';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
-const PricingPage: NextPage = () => {
-  return (
-    <div className="min-h-screen pt-16">
-      <Pricing />
-    </div>
-  );
+const PricingPage = () => {
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.replace('/how-it-works#pricing');
+  }, [router]);
+  
+  return null;
 };
 
 export default PricingPage;

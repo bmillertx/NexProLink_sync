@@ -1,14 +1,62 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTheme } from 'next-themes';
-import { SunIcon, MoonIcon, Bars3Icon as MenuIcon, XMarkIcon as XIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '@/context/AuthContext';
+import { 
+  SunIcon, 
+  MoonIcon, 
+  Bars3Icon as MenuIcon, 
+  XMarkIcon as XIcon,
+  UserCircleIcon 
+} from '@heroicons/react/24/outline';
 
 const Header = () => {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const renderAuthButtons = () => {
+    if (user) {
+      return (
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            {user.photoURL ? (
+              <Image
+                src={user.photoURL}
+                alt={user.displayName || 'Profile'}
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
+            ) : (
+              <UserCircleIcon className="h-8 w-8 text-gray-500" />
+            )}
+            <span className="text-gray-700 dark:text-gray-200">
+              {user.displayName || 'User'}
+            </span>
+          </div>
+          <Link href="/dashboard" className="text-gray-700 dark:text-gray-200 hover:text-primary-500 transition-colors">
+            Dashboard
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <Link href="/login" className="text-gray-700 dark:text-gray-200 hover:text-primary-500 transition-colors">
+          Login
+        </Link>
+        <Link href="/signup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+          Sign Up
+        </Link>
+      </>
+    );
   };
 
   return (
@@ -30,12 +78,7 @@ const Header = () => {
             <Link href="/become-contributor" className="text-gray-700 dark:text-gray-200 hover:text-primary-500 transition-colors">
               Become a Contributor
             </Link>
-            <Link href="/login" className="text-gray-700 dark:text-gray-200 hover:text-primary-500 transition-colors">
-              Login
-            </Link>
-            <Link href="/signup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
-              Sign Up
-            </Link>
+            {renderAuthButtons()}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -69,18 +112,44 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="pt-2 pb-3 space-y-1">
+              {user && (
+                <div className="flex items-center space-x-2 px-3 py-2">
+                  {user.photoURL ? (
+                    <Image
+                      src={user.photoURL}
+                      alt={user.displayName || 'Profile'}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <UserCircleIcon className="h-8 w-8 text-gray-500" />
+                  )}
+                  <span className="text-gray-700 dark:text-gray-200">
+                    {user.displayName || 'User'}
+                  </span>
+                </div>
+              )}
               <Link href="/find-professional" className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-500">
                 Find a Professional
               </Link>
               <Link href="/become-contributor" className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-500">
                 Become a Contributor
               </Link>
-              <Link href="/login" className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-500">
-                Login
-              </Link>
-              <Link href="/signup" className="block px-3 py-2 text-base font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md">
-                Sign Up
-              </Link>
+              {user ? (
+                <Link href="/dashboard" className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-500">
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-500">
+                    Login
+                  </Link>
+                  <Link href="/signup" className="block px-3 py-2 text-base font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md">
+                    Sign Up
+                  </Link>
+                </>
+              )}
               <button
                 onClick={toggleTheme}
                 className="w-full flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-500"
