@@ -1,15 +1,50 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import TestimonialCarousel from '../components/testimonials/TestimonialCarousel';
 import { VideoCameraIcon, CalendarIcon, ShieldCheckIcon, CurrencyDollarIcon, UserGroupIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
+import AuthModal from '@/components/auth/AuthModal';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalView, setAuthModalView] = useState<'signin' | 'signup'>('signup');
+  const router = useRouter();
+  const { user } = useAuth();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleAuthClick = (view: 'signin' | 'signup') => {
+    setAuthModalView(view);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleGetStarted = () => {
+    if (user) {
+      router.push('/dashboard');
+    } else {
+      handleAuthClick('signup');
+    }
+  };
+
+  const handleBecomeConsultant = () => {
+    if (user) {
+      router.push('/consultant/onboarding');
+    } else {
+      handleAuthClick('signup');
+    }
+  };
+
+  const handleLearnMore = () => {
+    const featuresSection = document.getElementById('features');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   if (!mounted) return null;
 
@@ -32,10 +67,16 @@ export default function Home() {
               Transform your business with on-demand access to industry-leading professionals
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="px-8 py-3 bg-primary-500 hover:bg-primary-600 rounded-lg font-semibold transition-all">
+              <button 
+                onClick={handleGetStarted}
+                className="px-8 py-3 bg-primary-500 hover:bg-primary-600 rounded-lg font-semibold transition-all"
+              >
                 Get Started
               </button>
-              <button className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition-all">
+              <button 
+                onClick={handleBecomeConsultant}
+                className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-lg font-semibold transition-all"
+              >
                 Become a Consultant
               </button>
             </div>
@@ -44,7 +85,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-white dark:bg-gray-900">
+      <section id="features" className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -109,7 +150,7 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-800">
+      <section id="how-it-works" className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -166,7 +207,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-white dark:bg-gray-900">
+      <section id="testimonials" className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -191,16 +232,29 @@ export default function Home() {
               Join NexProLink today and connect with industry-leading experts
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="px-8 py-3 bg-white text-primary-600 hover:bg-gray-100 rounded-lg font-semibold transition-all">
+              <button 
+                onClick={handleGetStarted}
+                className="px-8 py-3 bg-white text-primary-600 hover:bg-gray-100 rounded-lg font-semibold transition-all"
+              >
                 Get Started Now
               </button>
-              <button className="px-8 py-3 bg-transparent border-2 border-white hover:bg-white/10 rounded-lg font-semibold transition-all">
+              <button 
+                onClick={handleLearnMore}
+                className="px-8 py-3 bg-transparent border-2 border-white hover:bg-white/10 rounded-lg font-semibold transition-all"
+              >
                 Learn More
               </button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        view={authModalView}
+      />
     </div>
   );
 }
