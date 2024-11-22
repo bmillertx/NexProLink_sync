@@ -42,7 +42,7 @@ const Navigation = () => {
                 href="/how-it-works"
                 className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
               >
-                How It Works & Pricing
+                Getting Started
               </Link>
               {user ? (
                 <div className="relative group">

@@ -48,11 +48,6 @@ const Footer = () => {
                   Terms of Service
                 </Link>
               </li>
-              <li>
-                <Link href="/fees" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
-                  Fee Structure
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
