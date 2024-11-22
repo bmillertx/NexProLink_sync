@@ -254,26 +254,58 @@ export const resetPassword = async (email: string) => {
 };
 
 export const createTestAccount = async (type: 'client' | 'expert' = 'client') => {
-  const isClient = type === 'client';
-  const email = isClient ? 'test.client@nexprolink.com' : 'test.expert@nexprolink.com';
-  const password = 'Test123!@#';
-  const displayName = isClient ? 'Test Client' : 'Test Expert';
-  const userType = type;
+  const testEmail = type === 'client' 
+    ? 'testclient@example.com' 
+    : 'testexpert@example.com';
+  const testPassword = 'Test123!';
+  const testDisplayName = type === 'client' 
+    ? 'Test Home Cook' 
+    : 'Test Expert';
 
   try {
-    console.log(`Creating test ${type} account...`);
-    // First try to login if account exists
+    // Sign out any existing user
+    await signOut(auth);
+
+    // Create or sign in test account
     try {
-      await login(email, password);
-      console.log(`Test ${type} account already exists, logged in successfully`);
-      return;
-    } catch (loginError) {
-      // If login fails, create new account
-      await register(email, password, displayName, userType);
-      console.log(`Test ${type} account created successfully`);
+      await createUserWithEmailAndPassword(auth, testEmail, testPassword);
+      console.log('Created new test account');
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        await signInWithEmailAndPassword(auth, testEmail, testPassword);
+        console.log('Signed in to existing test account');
+      } else {
+        throw error;
+      }
     }
-  } catch (error: any) {
-    console.error(`Error with test ${type} account:`, error);
+
+    // Update profile
+    const user = auth.currentUser;
+    if (user) {
+      await updateProfile(user, { displayName: testDisplayName });
+      
+      // Create or update user profile
+      await createUserProfile(
+        user.uid,
+        testEmail,
+        testDisplayName,
+        type,
+        type === 'client' 
+          ? undefined 
+          : {
+              professionalTitle: 'Test Professional',
+              yearsOfExperience: 5,
+              bio: 'This is a test expert account',
+              hourlyRate: 100,
+              credentials: ['Test Credential'],
+              specialties: ['Test Specialty']
+            }
+      );
+    }
+
+    return { email: testEmail, password: testPassword };
+  } catch (error) {
+    console.error('Error creating test account:', error);
     throw error;
   }
 };
