@@ -20,48 +20,53 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Initialize Firebase services
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-const googleProvider = new GoogleAuthProvider();
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+export const googleProvider = new GoogleAuthProvider();
 
 // Configure Google Provider
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Initialize Analytics only in browser environment and if supported
-let analytics = null;
-
-// Enable offline persistence only in client side
+// Initialize persistence and analytics only in browser environment
 if (typeof window !== 'undefined') {
-  // Attempt to enable persistence
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time.
-      console.warn('Multiple tabs open, offline persistence disabled');
-    } else if (err.code === 'unimplemented') {
-      // The current browser doesn't support persistence
-      console.warn('Current browser does not support offline persistence');
-    }
-  });
+  // Attempt to enable persistence with proper error handling
+  enableIndexedDbPersistence(db)
+    .catch((err) => {
+      if (err.code === 'failed-precondition') {
+        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+      } else if (err.code === 'unimplemented') {
+        console.warn('Browser doesn\'t support persistence');
+      } else if (err.message?.includes('ERR_BLOCKED_BY_CLIENT') || err.code === 'permission-denied') {
+        console.warn('Firebase access blocked or insufficient permissions, falling back to local mode');
+      }
+    });
 
-  // Initialize analytics if supported
-  isSupported().then(supported => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
+  // Initialize analytics only if supported and not blocked
+  isSupported()
+    .then(supported => {
+      if (supported) {
+        try {
+          getAnalytics(app);
+        } catch (error) {
+          console.warn('Analytics initialization failed, continuing without analytics');
+        }
+      }
+    })
+    .catch(() => {
+      console.warn('Analytics not supported or blocked');
+    });
 }
 
 // Debug Firebase configuration in development
 if (process.env.NODE_ENV === 'development') {
   console.log('🔧 Firebase Config:', {
-    apiKey: firebaseConfig.apiKey?.substring(0, 8) + '...',
-    authDomain: firebaseConfig.authDomain,
+    apiKey: firebaseConfig.apiKey?.slice(0, 5) + '...',
     projectId: firebaseConfig.projectId,
-    storageBucket: firebaseConfig.storageBucket
+    authDomain: firebaseConfig.authDomain,
   });
 }
 
-export { app, auth, db, storage, analytics, googleProvider };
+export { app };
