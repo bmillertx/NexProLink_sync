@@ -77,7 +77,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         action: mode,
         email: formData.email
       });
-      setError(errorService.getErrorMessage(err));
+      const errorMessage = errorService.formatErrorMessage(err);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

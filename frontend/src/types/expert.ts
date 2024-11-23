@@ -1,21 +1,24 @@
 export interface Expert {
-  id: number;
+  id: number | string;
   name: string;
   title: string;
   rating: number;
-  reviews: number;
+  reviewCount: number;
   hourlyRate: number;
   availability: string;
-  specialties: string[];
-  imageUrl: string;
+  expertise: string[];
+  image: string;
   experienceLevel: string;
-  description?: string;
-  languages?: string[];
-  location?: string;
-  timezone?: string;
+  description: string;
+  languages: string[];
+  location: string;
+  timezone: string;
+  category?: string;
   education?: Education[];
   certifications?: Certification[];
   portfolio?: PortfolioItem[];
+  specialties?: string[];
+  imageUrl?: string;
 }
 
 export interface Education {

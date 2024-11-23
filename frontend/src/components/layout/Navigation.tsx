@@ -31,7 +31,7 @@ export default function Navigation() {
 
   const navigationItems = [
     { name: 'Home', href: '/' },
-    { name: 'Find Consultants', href: '/consultants' },
+    { name: 'Find Experts', href: '/experts' },
     { name: 'How It Works', href: '/#how-it-works' },
   ];
 

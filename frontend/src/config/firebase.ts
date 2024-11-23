@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getStorage } from 'firebase/storage';
 import { GoogleAuthProvider } from 'firebase/auth';
@@ -36,7 +36,7 @@ let analytics = null;
 // Enable offline persistence
 if (typeof window !== 'undefined') {
   enableIndexedDbPersistence(db, {
-    cacheSizeBytes: CACHE_SIZE_UNLIMITED
+    synchronizeTabs: true
   }).catch((err) => {
     if (err.code === 'failed-precondition') {
       // Multiple tabs open, persistence can only be enabled in one tab at a time.
