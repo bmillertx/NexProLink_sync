@@ -6,19 +6,49 @@ import { AdvancedSearch, SearchFilters } from '../components/experts/AdvancedSea
 import { ExpertCardEnhanced } from '../components/experts/ExpertCardEnhanced';
 import { Expert } from '../types/expert';
 import { useToast } from '@/hooks/useToast';
+import { expertService } from '@/services/expertService';
 import { mockExperts } from '@/data/mockExperts';
 
 const ExpertsPage: NextPage = () => {
-  const [experts, setExperts] = useState<Expert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [experts, setExperts] = useState<Expert[]>(mockExperts);
+  const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const router = useRouter();
   const toast = useToast();
 
+  useEffect(() => {
+    const loadExperts = async () => {
+      if (typeof window === 'undefined') return; // Skip on server-side
+
+      setLoading(true);
+      try {
+        const loadedExperts = await expertService.getExperts();
+        setExperts(loadedExperts);
+      } catch (error) {
+        console.error('Error loading experts:', error);
+        toast.error('Failed to load experts. Using local data.');
+        setExperts(mockExperts); // Fallback to mock data
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExperts();
+  }, [toast]);
+
   const handleSearch = useCallback(async (searchQuery: string, filters: SearchFilters) => {
+    if (typeof window === 'undefined') return; // Skip on server-side
+
     setLoading(true);
     try {
-      let filteredExperts = mockExperts.filter(expert => {
+      const searchResults = await expertService.searchExperts(searchQuery, filters);
+      setExperts(searchResults);
+    } catch (error) {
+      console.error('Error searching experts:', error);
+      toast.error('Failed to search experts. Please try again.');
+      
+      // Fallback to local filtering if Firebase fails
+      const filteredExperts = mockExperts.filter(expert => {
         const matchesSearch = !searchQuery || 
           expert.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           expert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -32,24 +62,16 @@ const ExpertsPage: NextPage = () => {
 
         return matchesSearch && matchesRating && matchesPrice && matchesLocation;
       });
-
+      
       setExperts(filteredExperts);
-    } catch (error) {
-      console.error('Error searching experts:', error);
-      toast.error('Failed to search experts. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependency array since we don't use any external values
+  }, [toast]);
 
   const handleBook = (expert: Expert) => {
     router.push(`/booking/${expert.id}`);
   };
-
-  useEffect(() => {
-    setExperts(mockExperts);
-    setLoading(false);
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

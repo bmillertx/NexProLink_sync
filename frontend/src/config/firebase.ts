@@ -33,11 +33,10 @@ googleProvider.setCustomParameters({
 // Initialize Analytics only in browser environment and if supported
 let analytics = null;
 
-// Enable offline persistence
+// Enable offline persistence only in client side
 if (typeof window !== 'undefined') {
-  enableIndexedDbPersistence(db, {
-    synchronizeTabs: true
-  }).catch((err) => {
+  // Attempt to enable persistence
+  enableIndexedDbPersistence(db).catch((err) => {
     if (err.code === 'failed-precondition') {
       // Multiple tabs open, persistence can only be enabled in one tab at a time.
       console.warn('Multiple tabs open, offline persistence disabled');
@@ -47,6 +46,7 @@ if (typeof window !== 'undefined') {
     }
   });
 
+  // Initialize analytics if supported
   isSupported().then(supported => {
     if (supported) {
       analytics = getAnalytics(app);
