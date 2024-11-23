@@ -69,36 +69,57 @@ class AuthService {
   ): Promise<UserProfile> {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const { user } = userCredential;
 
       // Send email verification
       await sendEmailVerification(user);
 
-      // Update user profile
       await updateProfile(user, { displayName });
 
-      // Create user profile in Firestore
+      // Base user profile
       const userProfile: UserProfile = {
         uid: user.uid,
         email: user.email!,
         displayName,
-        photoURL: user.photoURL || undefined,
         role,
         emailVerified: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        // Add professional info if consultant
-        ...(role === 'consultant' && professionalInfo && { professionalInfo }),
-        // Add default timezone
-        availability: {
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        }
       };
 
-      await this.createUserProfile(userProfile);
-      
+      // Create user document
+      await setDoc(doc(db, 'users', user.uid), {
+        ...userProfile,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      // If user is a consultant, create expert profile
+      if (role === 'consultant') {
+        const expertProfile = {
+          ...userProfile,
+          professionalInfo: professionalInfo || {
+            title: '',
+            specializations: [],
+            experience: 0,
+          },
+          consultationRate: 0,
+          availability: {
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            schedule: {},
+          },
+        };
+
+        await setDoc(doc(db, 'experts', user.uid), {
+          ...expertProfile,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
       return userProfile;
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error during sign up:', error);
       throw this.handleAuthError(error);
     }
   }
@@ -106,17 +127,50 @@ class AuthService {
   async signIn(email: string, password: string): Promise<UserProfile> {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const { user } = userCredential;
 
-      // Check if email is verified
-      if (!user.emailVerified) {
-        // Resend verification email if needed
-        await sendEmailVerification(user);
-        throw new Error('Please verify your email address. A new verification email has been sent.');
+      // Get user profile including role
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        throw new Error('User profile not found');
       }
 
-      return await this.getUserProfile(user.uid);
-    } catch (error: any) {
+      const userProfile = userDoc.data() as UserProfile;
+
+      // In development, skip email verification
+      if (process.env.NODE_ENV !== 'development' && !user.emailVerified) {
+        // Only resend verification email if enough time has passed (24 hours)
+        const lastEmailSentKey = `lastVerificationEmail_${user.uid}`;
+        const lastEmailSent = localStorage.getItem(lastEmailSentKey);
+        const now = Date.now();
+        
+        if (!lastEmailSent || (now - parseInt(lastEmailSent)) > 24 * 60 * 60 * 1000) {
+          try {
+            await sendEmailVerification(user);
+            localStorage.setItem(lastEmailSentKey, now.toString());
+          } catch (error: any) {
+            console.warn('Could not send verification email:', error);
+          }
+        }
+        
+        throw new Error('Please verify your email address before signing in. Check your inbox (and spam folder) for the verification link.');
+      }
+
+      // If user is a consultant, get expert profile
+      if (userProfile.role === 'consultant') {
+        const expertDoc = await getDoc(doc(db, 'experts', user.uid));
+        if (!expertDoc.exists()) {
+          throw new Error('Expert profile not found');
+        }
+        return {
+          ...userProfile,
+          ...expertDoc.data(),
+        } as UserProfile;
+      }
+
+      return userProfile;
+    } catch (error) {
+      console.error('Error during sign in:', error);
       throw this.handleAuthError(error);
     }
   }
@@ -194,6 +248,33 @@ class AuthService {
     }
   }
 
+  async getUserProfile(uid: string): Promise<UserProfile> {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      if (!userDoc.exists()) {
+        throw new Error('User profile not found');
+      }
+
+      const userData = userDoc.data() as UserProfile;
+      
+      // If user is a consultant, fetch additional expert data
+      if (userData.role === 'consultant') {
+        const expertDoc = await getDoc(doc(db, 'experts', uid));
+        if (expertDoc.exists()) {
+          return {
+            ...userData,
+            ...expertDoc.data(),
+          };
+        }
+      }
+      
+      return userData;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw this.handleAuthError(error);
+    }
+  }
+
   private async createUserProfile(profile: UserProfile): Promise<void> {
     const userRef = doc(db, 'users', profile.uid);
     
@@ -208,38 +289,26 @@ class AuthService {
     });
   }
 
-  async getUserProfile(uid: string): Promise<UserProfile> {
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    
-    if (!userSnap.exists()) {
-      throw new Error('User profile not found');
-    }
-    
-    return userSnap.data() as UserProfile;
-  }
-
   private handleAuthError(error: any): Error {
-    console.error('Auth Error:', error);
+    let message = 'An error occurred during authentication.';
     
-    const errorMessages: { [key: string]: string } = {
-      'auth/email-already-in-use': 'This email is already registered.',
-      'auth/invalid-email': 'Invalid email address.',
-      'auth/operation-not-allowed': 'Operation not allowed.',
-      'auth/weak-password': 'Password is too weak.',
-      'auth/user-disabled': 'This account has been disabled.',
-      'auth/user-not-found': 'No account found with this email.',
-      'auth/wrong-password': 'Incorrect password.',
-      'auth/popup-closed-by-user': 'Sign-in popup was closed before completion.',
-      'auth/requires-recent-login': 'Please sign in again to complete this action.',
-      'auth/email-not-verified': 'Please verify your email address.',
-      'auth/invalid-verification-code': 'Invalid verification code.',
-      'auth/invalid-verification-id': 'Invalid verification ID.',
-      'auth/missing-verification-code': 'Missing verification code.',
-      'auth/missing-verification-id': 'Missing verification ID.',
-    };
+    if (error?.code === 'auth/too-many-requests') {
+      message = 'Too many attempts. Please try again later.';
+    } else if (error?.code === 'auth/user-not-found') {
+      message = 'No account found with this email.';
+    } else if (error?.code === 'auth/wrong-password') {
+      message = 'Invalid password.';
+    } else if (error?.code === 'auth/email-already-in-use') {
+      message = 'An account already exists with this email.';
+    } else if (error?.code === 'auth/invalid-email') {
+      message = 'Invalid email address.';
+    } else if (error?.code === 'auth/weak-password') {
+      message = 'Password should be at least 6 characters.';
+    } else if (error?.message) {
+      message = error.message;
+    }
 
-    return new Error(errorMessages[error.code] || error.message || 'Authentication failed');
+    return new Error(message);
   }
 
   // Placeholder for Stripe integration

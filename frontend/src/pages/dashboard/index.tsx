@@ -3,7 +3,26 @@ import { useAuth } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function Dashboard() {
-  const { profile } = useAuth();
+  const { user, profile, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900">Loading profile...</h2>
+          <p className="mt-2 text-sm text-gray-600">Please wait while we fetch your information.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -12,7 +31,7 @@ export default function Dashboard() {
           <header>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <h1 className="text-3xl font-bold leading-tight text-gray-900">
-                {profile?.role === 'consultant' ? 'Consultant Dashboard' : 'Client Dashboard'}
+                {profile.role === 'consultant' ? 'Consultant Dashboard' : 'Client Dashboard'}
               </h1>
             </div>
           </header>
@@ -21,7 +40,7 @@ export default function Dashboard() {
               {/* Main dashboard content */}
               <div className="px-4 py-8 sm:px-0">
                 <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 p-4">
-                  {profile?.role === 'consultant' ? (
+                  {profile.role === 'consultant' ? (
                     <div>
                       <h2 className="text-lg font-semibold mb-4">Welcome, {profile.displayName}</h2>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -48,13 +67,13 @@ export default function Dashboard() {
                             <div className="flex items-center">
                               <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
                                 <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                               </div>
                               <div className="ml-5 w-0 flex-1">
                                 <dl>
-                                  <dt className="text-sm font-medium text-gray-500 truncate">Total Earnings</dt>
-                                  <dd className="text-lg font-medium text-gray-900">$0.00</dd>
+                                  <dt className="text-sm font-medium text-gray-500 truncate">Active Projects</dt>
+                                  <dd className="text-lg font-medium text-gray-900">0</dd>
                                 </dl>
                               </div>
                             </div>
@@ -64,14 +83,14 @@ export default function Dashboard() {
                         <div className="bg-white overflow-hidden shadow rounded-lg">
                           <div className="p-5">
                             <div className="flex items-center">
-                              <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                              <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
                                 <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
                               </div>
                               <div className="ml-5 w-0 flex-1">
                                 <dl>
-                                  <dt className="text-sm font-medium text-gray-500 truncate">Reviews</dt>
+                                  <dt className="text-sm font-medium text-gray-500 truncate">Tasks</dt>
                                   <dd className="text-lg font-medium text-gray-900">0</dd>
                                 </dl>
                               </div>
@@ -82,7 +101,7 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <div>
-                      <h2 className="text-lg font-semibold mb-4">Welcome, {profile?.displayName}</h2>
+                      <h2 className="text-lg font-semibold mb-4">Welcome, {profile.displayName}</h2>
                       <p className="text-gray-600">
                         Ready to find your next consultant? Browse our selection of experts and book your consultation today.
                       </p>

@@ -62,6 +62,7 @@ export const ExpertCard: React.FC<ExpertCardProps> = ({ expert }) => {
             height={192}
             className="w-full h-full object-cover"
             priority
+            sizes="(max-width: 768px) 100vw, 192px"
             onError={(e) => {
               // Fallback image on error
               (e.target as HTMLImageElement).src = '/images/default-avatar.png';

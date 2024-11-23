@@ -95,12 +95,14 @@ const ExpertProfile: React.FC<ExpertProfileProps> = ({ expert }) => {
             ) : (
               <div className="relative w-[150px] h-[150px]">
                 <Image
-                  src={expert.image}
+                  src={expert.image || '/placeholder-expert.jpg'}
                   alt={expert.name}
-                  fill
-                  className="rounded-lg border-4 border-white dark:border-gray-700 shadow-lg object-cover"
+                  layout="fill"
+                  objectFit="cover"
+                  className="transition-transform duration-300"
+                  style={{ transform: 'scale(1)' }}
+                  sizes="(max-width: 768px) 100vw, 33vw"
                   onError={handleImageError}
-                  sizes="150px"
                   priority
                 />
               </div>

@@ -104,12 +104,14 @@ export default function TestimonialCarousel() {
             className="absolute w-full h-full"
           >
             <div className="h-full flex flex-col justify-center items-center px-4 md:px-8">
-              <div className="w-16 h-16 relative mb-4">
+              <div className="relative w-24 h-24 mb-4">
                 <Image
                   src={testimonials[currentIndex].image}
                   alt={testimonials[currentIndex].name}
                   fill
+                  sizes="(max-width: 96px) 100vw, 96px"
                   className="rounded-full object-cover"
+                  priority={currentIndex === 0}
                 />
               </div>
               

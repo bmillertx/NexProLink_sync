@@ -10,7 +10,7 @@ export interface ErrorDetails {
   metadata?: Record<string, any>;
 }
 
-class ErrorService {
+export class ErrorService {
   private static instance: ErrorService;
 
   private constructor() {}
@@ -22,93 +22,71 @@ class ErrorService {
     return ErrorService.instance;
   }
 
-  /**
-   * Handle and log application errors
-   */
-  handleError(error: Error | unknown, metadata?: Record<string, any>): void {
-    const errorDetails = this.parseError(error);
-    
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Application Error:', errorDetails);
+  parseError(error: any): string {
+    if (typeof error === 'string') {
+      return error;
     }
+
+    if (error instanceof Error) {
+      // Check if it's a Firebase Auth error
+      const firebaseError = error as any;
+      if (firebaseError.code) {
+        switch (firebaseError.code) {
+          case 'auth/email-already-in-use':
+            return 'This email is already registered. Please try signing in instead.';
+          case 'auth/weak-password':
+            return 'Password should be at least 6 characters long.';
+          case 'auth/invalid-email':
+            return 'Please enter a valid email address.';
+          case 'auth/user-not-found':
+            return 'No account found with this email. Please check your email or sign up.';
+          case 'auth/wrong-password':
+            return 'Incorrect password. Please try again or reset your password.';
+          case 'auth/popup-closed-by-user':
+            return 'Sign-in popup was closed. Please try again.';
+          case 'auth/popup-blocked':
+            return 'Sign-in popup was blocked. Please enable popups for this site and try again.';
+          case 'auth/cancelled-popup-request':
+            return 'Only one sign-in popup can be open at a time. Please try again.';
+          case 'permission-denied':
+            return 'You do not have permission to perform this action.';
+          default:
+            return firebaseError.message || 'An unexpected error occurred.';
+        }
+      }
+      return error.message;
+    }
+
+    if (error?.code) {
+      return this.parseError(new Error(error.message || 'An unexpected error occurred'));
+    }
+
+    return 'An unexpected error occurred. Please try again.';
+  }
+
+  handleError(error: any, context?: { [key: string]: any }): never {
+    const errorMessage = this.parseError(error);
+    console.error('Error:', { message: errorMessage, context, error });
 
     // Log to Firebase Analytics
-    this.logToAnalytics(errorDetails, metadata);
+    this.logToAnalytics(errorMessage, context);
 
-    // You can add more error reporting services here (e.g., Sentry, LogRocket)
+    // Throw a new error with the parsed message
+    throw new Error(errorMessage);
   }
 
-  /**
-   * Parse different types of errors into a standardized format
-   */
-  private parseError(error: Error | unknown): ErrorDetails {
-    if (error instanceof Error) {
-      return {
-        message: error.message,
-        timestamp: new Date(),
-        metadata: {
-          stack: error.stack,
-          name: error.name
-        }
-      };
-    }
-
-    // Handle Firebase Auth errors
-    if (typeof error === 'object' && error !== null && 'code' in error) {
-      return {
-        code: (error as { code: string }).code,
-        message: (error as { message: string }).message,
-        timestamp: new Date()
-      };
-    }
-
-    // Handle unknown error types
-    return {
-      message: String(error),
-      timestamp: new Date()
-    };
+  formatErrorMessage(error: any): string {
+    return this.parseError(error);
   }
 
-  /**
-   * Log error to Firebase Analytics
-   */
-  private logToAnalytics(errorDetails: ErrorDetails, metadata?: Record<string, any>): void {
+  private logToAnalytics(errorMessage: string, context?: { [key: string]: any }): void {
     if (typeof window !== 'undefined' && analytics) {
       logEvent(analytics, 'error', {
-        error_code: errorDetails.code || 'unknown',
-        error_message: errorDetails.message,
-        error_timestamp: errorDetails.timestamp.toISOString(),
-        ...metadata
+        error_message: errorMessage,
+        error_timestamp: new Date().toISOString(),
+        ...context
       });
     }
-  }
-
-  /**
-   * Format user-friendly error messages
-   */
-  formatErrorMessage(error: Error | unknown): string {
-    const errorDetails = this.parseError(error);
-    
-    // Map error codes to user-friendly messages
-    const errorMessages: Record<string, string> = {
-      'auth/user-not-found': 'No account found with this email address.',
-      'auth/wrong-password': 'Incorrect password. Please try again.',
-      'auth/email-already-in-use': 'An account with this email already exists.',
-      'auth/weak-password': 'Please choose a stronger password.',
-      'auth/invalid-email': 'Please enter a valid email address.',
-      'auth/operation-not-allowed': 'This operation is not allowed.',
-      'auth/too-many-requests': 'Too many attempts. Please try again later.',
-      'permission-denied': 'You don\'t have permission to perform this action.',
-      'not-found': 'The requested resource was not found.',
-    };
-
-    if (errorDetails.code && errorDetails.code in errorMessages) {
-      return errorMessages[errorDetails.code];
-    }
-
-    // Return a generic message if no specific mapping exists
-    return 'An unexpected error occurred. Please try again later.';
   }
 }
 

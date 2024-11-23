@@ -27,16 +27,53 @@ class RateLimitService {
       errorMessage: 'Too many requests. Please try again later.',
     });
 
+    // Authentication rules
     this.setRule('auth', {
       maxRequests: 5,
       windowMs: 60 * 1000, // 1 minute
       errorMessage: 'Too many authentication attempts. Please try again later.',
     });
 
+    // General API rules
     this.setRule('api', {
       maxRequests: 50,
       windowMs: 60 * 1000, // 1 minute
       errorMessage: 'API rate limit exceeded. Please try again later.',
+    });
+
+    // Expert profile rules
+    this.setRule('expert-profile-update', {
+      maxRequests: 10,
+      windowMs: 60 * 1000, // 1 minute
+      errorMessage: 'Too many profile updates. Please try again later.',
+    });
+
+    // Consultation booking rules
+    this.setRule('consultation-booking', {
+      maxRequests: 3,
+      windowMs: 60 * 1000, // 1 minute
+      errorMessage: 'Too many booking attempts. Please wait before trying again.',
+    });
+
+    // Expert search rules
+    this.setRule('expert-search', {
+      maxRequests: 20,
+      windowMs: 60 * 1000, // 1 minute
+      errorMessage: 'Search rate limit exceeded. Please try again later.',
+    });
+
+    // Expert availability update rules
+    this.setRule('availability-update', {
+      maxRequests: 15,
+      windowMs: 60 * 1000, // 1 minute
+      errorMessage: 'Too many availability updates. Please try again later.',
+    });
+
+    // Payment operation rules
+    this.setRule('payment', {
+      maxRequests: 5,
+      windowMs: 60 * 1000, // 1 minute
+      errorMessage: 'Too many payment attempts. Please try again later.',
     });
   }
 
@@ -154,6 +191,59 @@ class RateLimitService {
    */
   clearAllLimits(): void {
     this.limits.clear();
+  }
+
+  /**
+   * Check rate limit with custom error handling
+   */
+  async checkRateLimitWithError(
+    key: string,
+    ruleKey: string = 'default'
+  ): Promise<void> {
+    const allowed = await this.checkRateLimit(key, ruleKey);
+    if (!allowed) {
+      const rule = this.rules.get(ruleKey);
+      throw new Error(rule?.errorMessage || 'Rate limit exceeded');
+    }
+  }
+
+  /**
+   * Get remaining requests for a key
+   */
+  getRemainingRequests(key: string, ruleKey: string = 'default'): number {
+    const rule = this.rules.get(ruleKey);
+    if (!rule) return 0;
+
+    const now = Date.now();
+    const limitKey = `${ruleKey}:${key}`;
+    const entry = this.limits.get(limitKey);
+
+    if (!entry || now >= entry.resetTime) {
+      return rule.maxRequests;
+    }
+
+    return Math.max(0, rule.maxRequests - entry.count);
+  }
+
+  /**
+   * Get time until reset for a key
+   */
+  getTimeUntilReset(key: string, ruleKey: string = 'default'): number {
+    const limitKey = `${ruleKey}:${key}`;
+    const entry = this.limits.get(limitKey);
+
+    if (!entry) return 0;
+
+    const now = Date.now();
+    return Math.max(0, entry.resetTime - now);
+  }
+
+  /**
+   * Clear rate limit for a key
+   */
+  clearLimit(key: string, ruleKey: string = 'default'): void {
+    const limitKey = `${ruleKey}:${key}`;
+    this.limits.delete(limitKey);
   }
 }
 

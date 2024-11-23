@@ -6,13 +6,17 @@ import {
   ArrowLeftOnRectangleIcon as LogoutIcon, 
   Bars3Icon as MenuIcon, 
   UserPlusIcon as UserAddIcon, 
-  XMarkIcon as XIcon 
+  XMarkIcon as XIcon,
+  MoonIcon,
+  SunIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/hooks/useAuth';
+import { useDarkMode } from '@/hooks/useDarkMode';
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
   const router = useRouter();
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -35,7 +39,7 @@ export default function Navigation() {
     { name: 'How It Works', href: '/#how-it-works' },
   ];
 
-  const authenticatedItems = profile?.role === 'consultant' 
+  const authenticatedItems = profile?.userType === 'expert'
     ? [
         { name: 'Dashboard', href: '/dashboard' },
         { name: 'My Schedule', href: '/schedule' },
@@ -74,7 +78,7 @@ export default function Navigation() {
           </div>
         </div>
       )}
-      <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
+      <nav className={`bg-white dark:bg-gray-900 shadow-lg fixed w-full top-0 z-50`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
@@ -101,57 +105,72 @@ export default function Navigation() {
               </div>
             </div>
 
-            <div className="hidden sm:ml-6 sm:flex sm:items-center">
-              {user ? (
-                <div className="flex items-center space-x-4">
-                  {authenticatedItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    <LogoutIcon className="h-5 w-5 mr-1" />
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-4">
-                  <Link
-                    href="/auth/signin"
-                    className="flex items-center text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    <LoginIcon className="h-5 w-5 mr-1" />
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    className="flex items-center text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    <UserAddIcon className="h-5 w-5 mr-1" />
-                    Sign Up
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center sm:hidden">
+            <div className="flex items-center">
+              {/* Dark mode toggle */}
               <button
-                onClick={toggleMenu}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                onClick={toggleDarkMode}
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-900 focus:ring-blue-500"
+                aria-label="Toggle dark mode"
               >
-                {isOpen ? (
-                  <XIcon className="block h-6 w-6" />
+                {isDarkMode ? (
+                  <SunIcon className="h-5 w-5" />
                 ) : (
-                  <MenuIcon className="block h-6 w-6" />
+                  <MoonIcon className="h-5 w-5" />
                 )}
               </button>
+              {/* User menu */}
+              <div className="hidden sm:ml-6 sm:flex sm:items-center">
+                {user ? (
+                  <div className="flex items-center space-x-4">
+                    {authenticatedItems.map((item) => (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      <LogoutIcon className="h-5 w-5 mr-1" />
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-4">
+                    <Link
+                      href="/auth/signin"
+                      className="flex items-center text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      <LoginIcon className="h-5 w-5 mr-1" />
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      className="flex items-center text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium"
+                    >
+                      <UserAddIcon className="h-5 w-5 mr-1" />
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center sm:hidden">
+                <button
+                  onClick={toggleMenu}
+                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                >
+                  {isOpen ? (
+                    <XIcon className="block h-6 w-6" />
+                  ) : (
+                    <MenuIcon className="block h-6 w-6" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
