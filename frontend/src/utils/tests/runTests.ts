@@ -1,6 +1,7 @@
 import { verifyNetworkStatus } from './networkTest';
 import { testAuthFlow } from './auth/authTest';
 import { testExpertProfileFlow } from './expert/expertProfileTest';
+import { testAppointmentFlow } from './appointment/appointmentTest';
 
 async function runAllTests() {
   console.log('🔄 Starting system verification...\n');
@@ -33,6 +34,17 @@ async function runAllTests() {
     allTestsPassed = false;
   } else {
     console.log('✅ Expert profile tests passed successfully');
+  }
+
+  // Test Appointment Scheduling
+  console.log('\nTesting Appointment Scheduling:');
+  const appointmentResults = await testAppointmentFlow();
+  if (!appointmentResults.success) {
+    console.error('❌ Appointment scheduling tests failed:');
+    appointmentResults.errors.forEach(error => console.error(`  - ${error}`));
+    allTestsPassed = false;
+  } else {
+    console.log('✅ Appointment scheduling tests passed successfully');
   }
 
   if (!allTestsPassed) {
