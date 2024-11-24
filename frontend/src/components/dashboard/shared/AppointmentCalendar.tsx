@@ -15,13 +15,15 @@ import { useTheme } from '@/context/ThemeContext';
 import { Appointment } from '@/services/appointments';
 
 interface AppointmentCalendarProps {
+  selectedDate: Date | null;
+  onDateSelect: (date: Date) => void;
   appointments: Appointment[];
-  onDayClick?: (date: Date) => void;
 }
 
 export default function AppointmentCalendar({
+  selectedDate,
+  onDateSelect,
   appointments,
-  onDayClick,
 }: AppointmentCalendarProps) {
   const { isDarkMode } = useTheme();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -118,7 +120,7 @@ export default function AppointmentCalendar({
             <div
               key={day.toString()}
               className={getDayClasses(day)}
-              onClick={() => onDayClick?.(day)}
+              onClick={() => onDateSelect(day)}
             >
               <time
                 dateTime={format(day, 'yyyy-MM-dd')}

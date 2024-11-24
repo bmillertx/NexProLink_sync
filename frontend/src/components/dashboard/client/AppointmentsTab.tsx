@@ -97,7 +97,23 @@ export default function AppointmentsTab() {
           ]);
         } else {
           const fetchedExperts = await getExperts();
-          setExperts(fetchedExperts);
+          // Transform fetched experts to match our interface
+          const transformedExperts = fetchedExperts.map((expert: any) => ({
+            ...expert,
+            expertise: expert.expertise || [],
+            experienceLevel: expert.experienceLevel || "Not specified",
+            description: expert.description || expert.bio || "",
+            location: expert.location || "Remote",
+            timezone: expert.timezone || "UTC",
+            category: expert.category || "general",
+            videoCallAvailable: expert.videoCallAvailable || false,
+            inPersonAvailable: expert.inPersonAvailable || false,
+            languages: expert.languages || ["English"],
+            rating: expert.rating || 0,
+            totalReviews: expert.totalReviews || 0,
+            hourlyRate: expert.hourlyRate || 0
+          })) as Expert[];
+          setExperts(transformedExperts);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
