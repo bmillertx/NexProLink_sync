@@ -3,21 +3,27 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   sendPasswordResetEmail,
+  signOut,
   updateProfile,
   sendEmailVerification,
+  GoogleAuthProvider,
+  User
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db, googleProvider } from '../config/firebase';
-import { errorService } from './error/error.service';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { errorService } from '@/services/error/error.service';
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
   userType: 'client' | 'expert';
+  emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  emailVerified: boolean;
   professionalTitle?: string;
   yearsOfExperience?: number;
   bio?: string;
@@ -84,6 +90,70 @@ export const createUserProfile = async (
   }
 };
 
+export const register = async (
+  email: string,
+  password: string,
+  displayName: string,
+  userType: 'client' | 'expert'
+): Promise<UserProfile> => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const { user } = userCredential;
+
+    await updateProfile(user, { displayName });
+    await sendEmailVerification(user);
+
+    const profile: UserProfile = {
+      uid: user.uid,
+      email: user.email!,
+      displayName,
+      userType,
+      emailVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(userRef, profile);
+
+    return profile;
+  } catch (error) {
+    console.error('Registration error:', error);
+    throw errorService.handleError(error, {
+      context: 'registration',
+      email,
+      userType,
+    });
+  }
+};
+
+export const login = async (email: string, password: string): Promise<UserProfile> => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const { user } = userCredential;
+
+    if (!user.emailVerified) {
+      await signOut(auth);
+      throw new Error('Please verify your email before signing in.');
+    }
+
+    const userRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      throw new Error('User profile not found.');
+    }
+
+    return userDoc.data() as UserProfile;
+  } catch (error) {
+    console.error('Login error:', error);
+    throw errorService.handleError(error, {
+      context: 'login',
+      email,
+    });
+  }
+};
+
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   try {
     const userDoc = await getDoc(doc(db, 'users', uid));
@@ -114,80 +184,30 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   }
 };
 
-export const login = async (email: string, password: string): Promise<UserProfile> => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const { user } = userCredential;
-
-    if (!user.emailVerified) {
-      throw new Error('Please verify your email before signing in.');
-    }
-
-    const profile = await getUserProfile(user.uid);
-    if (!profile) {
-      throw new Error('User profile not found.');
-    }
-
-    return profile;
-  } catch (error) {
-    console.error('Login error:', error);
-    throw errorService.handleError(error, {
-      context: 'login',
-      email,
-    });
-  }
-};
-
-export const register = async (
-  email: string,
-  password: string,
-  displayName: string,
-  userType: 'client' | 'expert'
-): Promise<UserProfile> => {
-  try {
-    // Create Firebase user
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const { user } = userCredential;
-
-    // Update display name
-    await updateProfile(user, { displayName });
-
-    // Send email verification
-    await sendEmailVerification(user);
-
-    // Create user profile
-    const profile = await createUserProfile(user.uid, email, displayName, userType);
-
-    // Sign out the user after registration to enforce email verification
-    await auth.signOut();
-
-    return profile;
-  } catch (error) {
-    console.error('Registration error:', error);
-    throw errorService.handleError(error, {
-      context: 'registration',
-      email,
-      userType,
-    });
-  }
-};
-
 export const googleSignIn = async (): Promise<UserProfile> => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const { user } = result;
 
     // Check if user profile exists
-    let profile = await getUserProfile(user.uid);
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    let profile: UserProfile;
 
-    if (!profile) {
-      // Create new profile for Google sign-in
-      profile = await createUserProfile(
-        user.uid,
-        user.email || '',
-        user.displayName || '',
-        'client' // Default to client for Google sign-in
-      );
+    if (userDoc.exists()) {
+      profile = userDoc.data() as UserProfile;
+    } else {
+      // Create new profile for Google sign-in users
+      profile = {
+        uid: user.uid,
+        email: user.email!,
+        displayName: user.displayName || 'User',
+        userType: 'client',
+        emailVerified: user.emailVerified,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, 'users', user.uid), profile);
     }
 
     return profile;

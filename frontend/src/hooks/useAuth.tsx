@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, signOut, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { auth } from '@/config/firebase';
+import { auth } from '@/lib/firebase';
 import { 
   getUserProfile, 
   createUserProfile,
@@ -33,71 +33,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isExpert, setIsExpert] = useState(false);
 
-  const updateProfile = async () => {
-    if (!user) return;
-    try {
-      const userProfile = await getUserProfile(user.uid);
-      if (userProfile) {
-        setProfile(userProfile);
-        setIsExpert(userProfile.userType === 'expert');
-      }
-    } catch (error) {
-      console.error('Error updating user profile:', error);
-      setProfile(null);
-      setIsExpert(false);
-    }
-  };
-
   useEffect(() => {
-    if (typeof window === 'undefined' || !auth) {
-      setLoading(false);
-      return;
-    }
-
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      try {
-        setLoading(true);
-        
-        if (user) {
-          // Check email verification
-          if (!user.emailVerified) {
-            // If email is not verified, sign out and clear state
-            await auth.signOut();
-            setUser(null);
-            setProfile(null);
-            setIsExpert(false);
-            return;
-          }
-
-          setUser(user);
-          const userProfile = await getUserProfile(user.uid);
-          if (userProfile) {
-            setProfile(userProfile);
-            setIsExpert(userProfile.userType === 'expert');
-          } else {
-            console.error('User exists in Auth but not in Firestore');
-            setProfile(null);
-            setIsExpert(false);
-          }
-        } else {
-          setUser(null);
-          setProfile(null);
-          setIsExpert(false);
-        }
-      } catch (error) {
-        console.error('Error in auth state change:', error);
-        setUser(null);
+      setUser(user);
+      if (user) {
+        const userProfile = await getUserProfile(user.uid);
+        setProfile(userProfile);
+        setIsExpert(userProfile?.userType === 'expert' || false);
+      } else {
         setProfile(null);
         setIsExpert(false);
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const value: AuthContextType = {
+  const value = {
     user,
     profile,
     loading,
@@ -105,20 +58,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn: login,
     signUp: register,
     signInWithGoogle,
-    signOut: async () => {
-      if (!auth) throw new Error('Auth not initialized');
-      await auth.signOut();
-    },
+    signOut: () => signOut(auth),
     resetPassword: sendPasswordReset,
-    updateProfile,
-    resendVerificationEmail: async (email: string) => {
-      if (!auth) throw new Error('Auth not initialized');
-      if (!auth.currentUser) throw new Error('No user signed in');
-      await sendEmailVerification(auth.currentUser);
+    updateProfile: async () => {
+      if (!user) return;
+      const userProfile = await getUserProfile(user.uid);
+      setProfile(userProfile);
+      setIsExpert(userProfile?.userType === 'expert' || false);
     },
+    resendVerificationEmail: async (email: string) => {
+      if (!user) throw new Error('No user found');
+      await sendEmailVerification(user);
+    }
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

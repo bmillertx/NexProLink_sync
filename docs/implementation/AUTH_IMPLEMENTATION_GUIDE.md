@@ -58,57 +58,135 @@ export { app, auth, db };
 
 ## Authentication Implementation
 
-### Auth Service
+### Context Setup
+The authentication system is implemented using a React Context (`AuthContext`) that provides authentication state and methods throughout the application.
+
 ```typescript
-// services/auth/auth.service.ts
-export interface UserProfile {
+// Usage example
+import { useAuth } from '@/contexts/AuthContext';
+
+function MyComponent() {
+  const { user, profile, signIn, signUp } = useAuth();
+  // Use auth methods and state
+}
+```
+
+### Available Authentication Methods
+- `signIn(email: string, password: string)`: Sign in existing users
+- `signUp(email: string, password: string, role: 'client' | 'consultant')`: Create new users
+- `logout()`: Sign out the current user
+- `resetPassword(email: string)`: Send password reset email
+- `updateUserProfile(updates: Partial<UserProfile>)`: Update user profile
+- `reauthenticate(password: string)`: Reauthenticate user for sensitive operations
+
+### Role-Based Access Control
+Access control is implemented using the `ProtectedRoute` component:
+
+```typescript
+// Pages with role-based access
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+
+// Client-only page
+export default function ClientDashboard() {
+  return (
+    <ProtectedRoute requiredRole="client">
+      <DashboardContent />
+    </ProtectedRoute>
+  );
+}
+
+// Consultant-only page
+export default function ConsultantDashboard() {
+  return (
+    <ProtectedRoute requiredRole="consultant">
+      <DashboardContent />
+    </ProtectedRoute>
+  );
+}
+```
+
+### User Profile Management
+User profiles are stored in Firestore with the following structure:
+
+```typescript
+interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
-  userType: 'client' | 'expert' | 'admin';
+  role: 'client' | 'consultant';
+  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
-  emailVerified: boolean;
-  specialties?: string[];
-}
-
-export const signIn = async (email: string, password: string): Promise<UserProfile>;
-export const signUp = async (
-  email: string, 
-  password: string, 
-  displayName: string, 
-  role: 'client' | 'expert'
-): Promise<UserProfile>;
-export const signInWithGoogle = async (): Promise<UserProfile>;
-```
-
-### Auth Context
-```typescript
-// hooks/useAuth.tsx
-interface AuthContextType {
-  user: User | null;
-  profile: UserProfile | null;
-  loading: boolean;
-  isExpert: boolean;
-  signIn: (email: string, password: string) => Promise<UserProfile>;
-  signUp: (email: string, password: string, displayName: string, role: 'client' | 'expert') => Promise<UserProfile>;
-  signInWithGoogle: () => Promise<UserProfile>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  // Additional fields based on role
+  consultationRate?: number;      // For consultants
+  availability?: {
+    timezone: string;
+    schedule?: Record<string, { start: string; end: string }>;
+  };
+  professionalInfo?: {
+    title?: string;
+    specializations?: string[];
+    experience?: number;
+    education?: Array<{
+      degree: string;
+      institution: string;
+      year: number;
+    }>;
+    certifications?: Array<{
+      name: string;
+      issuer: string;
+      year: number;
+    }>;
+  };
 }
 ```
 
-### Protected Routes
-```typescript
-// components/auth/ProtectedRoute.tsx
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: 'client' | 'expert' | 'admin';
-}
+### Security Rules
+Firestore security rules for user profiles:
 
-const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  // Implementation details in component reference
-};
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == userId ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'consultant'
+      );
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Additional rules for consultant profiles
+      match /availability/{document=**} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'consultant';
+      }
+    }
+  }
+}
+```
+
+### Error Handling
+Authentication errors are handled consistently throughout the application:
+
+```typescript
+try {
+  await signIn(email, password);
+  // Success handling
+} catch (error) {
+  // Error is automatically handled by AuthContext
+  // and stored in the error state
+}
+```
+
+### Testing Authentication
+Test authentication flows using the provided test utilities:
+
+```typescript
+import { authTest } from '@/utils/tests/auth/authTest';
+
+// Run authentication tests
+await authTest.runAll();
 ```
 
 ## User Management

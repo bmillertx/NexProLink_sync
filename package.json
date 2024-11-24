@@ -8,5 +8,10 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@types/firebase": "^2.4.32",
+    "dotenv": "^16.4.5",
+    "firebase": "^11.0.2"
+  }
 }

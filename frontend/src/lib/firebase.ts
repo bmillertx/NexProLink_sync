@@ -1,10 +1,8 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { GoogleAuthProvider } from 'firebase/auth';
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -15,18 +13,17 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+function createFirebaseApp() {
+  if (getApps().length <= 0) {
+    return initializeApp(firebaseConfig);
+  }
+  return getApps()[0];
+}
 
-// Initialize services
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-const googleProvider = new GoogleAuthProvider();
+const firebaseApp = createFirebaseApp();
 
-// Configure Google Provider
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
+export const auth = getAuth(firebaseApp);
+export const db = getFirestore(firebaseApp);
+export const storage = getStorage(firebaseApp);
 
-export { auth, db, storage, googleProvider };
+export default firebaseApp;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   ChartBarIcon,
   CalendarIcon,
@@ -9,6 +9,8 @@ import {
   CogIcon,
   ChatBubbleLeftRightIcon,
   BriefcaseIcon,
+  VideoCameraIcon,
+  CreditCardIcon,
 } from '@heroicons/react/24/outline';
 
 interface DashboardLayoutProps {
@@ -20,23 +22,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
 
   const clientMenuItems = [
-    { name: 'Overview', href: '/dashboard', icon: ChartBarIcon },
-    { name: 'Consultations', href: '/dashboard/consultations', icon: CalendarIcon },
-    { name: 'My Network', href: '/dashboard/network', icon: UserGroupIcon },
-    { name: 'Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
-    { name: 'Settings', href: '/dashboard/settings', icon: CogIcon },
+    { name: 'Overview', href: '/client/dashboard', icon: ChartBarIcon },
+    { name: 'Find Consultants', href: '/client/consultants', icon: UserGroupIcon },
+    { name: 'My Consultations', href: '/client/consultations', icon: CalendarIcon },
+    { name: 'Video Sessions', href: '/client/sessions', icon: VideoCameraIcon },
+    { name: 'Messages', href: '/client/messages', icon: ChatBubbleLeftRightIcon },
+    { name: 'Billing', href: '/client/billing', icon: CreditCardIcon },
+    { name: 'Settings', href: '/client/settings', icon: CogIcon },
   ];
 
-  const expertMenuItems = [
-    { name: 'Overview', href: '/dashboard', icon: ChartBarIcon },
-    { name: 'Schedule', href: '/dashboard/schedule', icon: CalendarIcon },
-    { name: 'My Clients', href: '/dashboard/network', icon: UserGroupIcon },
-    { name: 'Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
-    { name: 'Services', href: '/dashboard/services', icon: BriefcaseIcon },
-    { name: 'Settings', href: '/dashboard/settings', icon: CogIcon },
+  const consultantMenuItems = [
+    { name: 'Overview', href: '/consultant/dashboard', icon: ChartBarIcon },
+    { name: 'Schedule', href: '/consultant/schedule', icon: CalendarIcon },
+    { name: 'My Clients', href: '/consultant/clients', icon: UserGroupIcon },
+    { name: 'Video Sessions', href: '/consultant/sessions', icon: VideoCameraIcon },
+    { name: 'Messages', href: '/consultant/messages', icon: ChatBubbleLeftRightIcon },
+    { name: 'Services', href: '/consultant/services', icon: BriefcaseIcon },
+    { name: 'Earnings', href: '/consultant/earnings', icon: CreditCardIcon },
+    { name: 'Settings', href: '/consultant/settings', icon: CogIcon },
   ];
 
-  const menuItems = profile?.userType === 'expert' ? expertMenuItems : clientMenuItems;
+  const menuItems = profile?.role === 'consultant' ? consultantMenuItems : clientMenuItems;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -46,9 +52,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="flex flex-col w-64">
             <div className="flex flex-col flex-grow pt-5 overflow-y-auto bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
               <div className="flex items-center flex-shrink-0 px-4">
-                <span className="text-xl font-semibold text-gray-800 dark:text-white">
-                  {profile?.userType === 'expert' ? 'Expert Portal' : 'Client Portal'}
-                </span>
+                <Link href="/" className="flex items-center">
+                  <span className="text-xl font-semibold text-gray-800 dark:text-white">
+                    NexProLink
+                  </span>
+                </Link>
               </div>
               <div className="mt-5 flex-grow flex flex-col">
                 <nav className="flex-1 px-2 pb-4 space-y-1">
@@ -83,16 +91,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div>
                     <img
                       className="inline-block h-9 w-9 rounded-full"
-                      src={user?.photoURL || `https://ui-avatars.com/api/?name=${profile?.displayName}`}
-                      alt={profile?.displayName}
+                      src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.displayName || '')}`}
+                      alt={profile?.displayName || 'User avatar'}
                     />
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
                       {profile?.displayName}
                     </p>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                      {profile?.userType}
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 capitalize">
+                      {profile?.role}
                     </p>
                   </div>
                 </div>

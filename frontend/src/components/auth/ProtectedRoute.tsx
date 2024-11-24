@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'client' | 'expert' | 'admin';
+  requiredRole?: 'client' | 'consultant';
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -16,11 +16,10 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     if (!loading && typeof window !== 'undefined') {
       if (!user) {
         router.push('/auth/signin');
-      } else if (requiredRole && profile?.userType !== requiredRole) {
+      } else if (requiredRole && profile?.role !== requiredRole) {
         // Redirect to appropriate dashboard based on user role
-        const redirectPath = profile?.userType === 'client' ? '/client/dashboard' :
-                           profile?.userType === 'expert' ? '/expert/dashboard' :
-                           profile?.userType === 'admin' ? '/admin/dashboard' :
+        const redirectPath = profile?.role === 'client' ? '/client/dashboard' :
+                           profile?.role === 'consultant' ? '/consultant/dashboard' :
                            '/auth/signin';
         router.push(redirectPath);
       }
@@ -31,7 +30,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     return <LoadingSpinner />;
   }
 
-  if (!user || (requiredRole && profile?.userType !== requiredRole)) {
+  if (!user || (requiredRole && profile?.role !== requiredRole)) {
     return null;
   }
 

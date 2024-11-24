@@ -50,62 +50,158 @@
 - Token handling
 - Success/failure states
 
+### 1.4 Video Components
+#### VideoQualityIndicator (`src/components/video/VideoQualityIndicator.tsx`)
+- Real-time video call quality monitoring
+- Visual quality indicators
+- Detailed metrics display
+- Features:
+  * Connection quality status
+  * Bitrate monitoring
+  * Latency tracking
+  * Packet loss detection
+  * Frame rate display
+  * Resolution information
+
+#### Integration Points
+- Integrates with `videoQualityMonitor` service
+- Uses Firebase for metrics storage
+- Connects with WebRTC stats API
+- Updates in real-time (1-second intervals)
+
+#### Usage Example
+```tsx
+<VideoQualityIndicator
+  sessionId="video-session-id"
+  onQualityChange={(quality) => {
+    // Handle quality changes
+  }}
+/>
+```
+
+#### Props
+| Prop | Type | Description |
+|------|------|-------------|
+| sessionId | string | Unique identifier for the video session |
+| onQualityChange | (quality: VideoCallQuality) => void | Optional callback for quality changes |
+
+#### Quality Thresholds
+- Excellent: 2+ Mbps, <100ms latency, <0.5% packet loss
+- Good: 1+ Mbps, <200ms latency, <2% packet loss
+- Fair: 500+ Kbps, <300ms latency, <5% packet loss
+- Poor: 250+ Kbps, <500ms latency, <10% packet loss
+- Critical: Below minimum thresholds
+
 ## 2. Dashboard Components
 
-### 2.1 Appointment Management
-#### AppointmentsTab (`src/components/dashboard/client/AppointmentsTab.tsx`)
-```typescript
-interface Props {
-  expert: Expert;
-  onDateSelect: (date: Date) => void;
-  // ... other props
-}
-```
-- Data fetching implementation
-- State management
-- Error handling
+### 2.1 Layout Components
+#### DashboardLayout (`src/components/dashboard/DashboardLayout.tsx`)
+- Main dashboard wrapper component
+- Role-based navigation menu
+- Responsive sidebar
+- User profile display
+- Dark mode support
 
-#### Calendar Integration
-- Date picker implementation
-- Available slots display
-- Timezone handling
+Features:
+- Dynamic menu based on user role (client/consultant)
+- Integrated user profile
+- Responsive design
+- Navigation state management
+- Theme support
 
-#### Booking Modal Flow
-- Form validation
-- Slot selection
-- Confirmation handling
+Integration Points:
+- AuthContext for user data
+- Next.js routing
+- Tailwind for styling
+- HeroIcons for icons
 
-### 2.2 Expert Profile Display
-#### Profile Card Component
-- Data display
-- Rating system
-- Action buttons
+### 2.2 Client Dashboard Components
+#### Overview (`src/pages/client/dashboard/index.tsx`)
+- Summary of upcoming consultations
+- Recent activity
+- Quick actions
 
-#### Availability Display
-- Schedule visualization
-- Timezone conversion
-- Slot selection
+#### ConsultantSearch (`src/components/dashboard/client/ConsultantSearch.tsx`)
+- Search and filter consultants
+- View consultant profiles
+- Booking interface
 
-#### Event Schedule Integration
-- Event type handling
-- Duration display
-- Capacity management
+#### ConsultationHistory (`src/components/dashboard/client/ConsultationHistory.tsx`)
+- List of past consultations
+- Session ratings and feedback
+- Download session notes
 
-### 2.3 Data Handling Components
-#### Data Fetching Patterns
-- Loading states
-- Error handling
+#### VideoSessions (`src/components/dashboard/client/VideoSessions.tsx`)
+- Upcoming video sessions
+- Join session interface
+- Session preparation checklist
+
+### 2.3 Consultant Dashboard Components
+#### Overview (`src/pages/consultant/dashboard/index.tsx`)
+- Daily schedule
+- Upcoming sessions
+- Earnings summary
+- Client requests
+
+#### Schedule (`src/components/dashboard/consultant/Schedule.tsx`)
+- Availability management
+- Session calendar
+- Break time settings
+
+#### ClientManagement (`src/components/dashboard/consultant/ClientManagement.tsx`)
+- Client list
+- Session history per client
+- Notes and feedback
+
+#### ServiceManagement (`src/components/dashboard/consultant/ServiceManagement.tsx`)
+- Service offerings
+- Pricing configuration
+- Availability slots
+
+### 2.4 Shared Components
+#### VideoCall (`src/components/dashboard/shared/VideoCall.tsx`)
+- Video consultation interface
+- Quality indicators
+- Screen sharing
+- Chat functionality
+
+#### MessageCenter (`src/components/dashboard/shared/MessageCenter.tsx`)
+- Direct messaging
+- File sharing
+- Message history
+
+#### Settings (`src/components/dashboard/shared/Settings.tsx`)
+- Profile management
+- Notification preferences
+- Account settings
+
+### 2.5 Integration Points
+#### Video Service
+- Integration with video quality monitor
+- WebRTC connection handling
+- Quality metrics tracking
+
+#### Payment Processing
+- Stripe integration
+- Session billing
+- Payout management
+
+#### Notifications
+- Real-time updates
+- Email notifications
+- Push notifications
+
+### 2.6 State Management
+#### Dashboard Context
+- Session state
+- UI preferences
 - Cache management
 
-#### Error State Management
-- Error boundaries
-- Fallback UI
-- Recovery actions
-
-#### Loading State Patterns
-- Skeleton screens
-- Progressive loading
-- Transition handling
+### 2.7 Testing
+#### Dashboard Test Suite
+- Component tests
+- Integration tests
+- Performance monitoring
 
 ## 3. Component Best Practices
 
