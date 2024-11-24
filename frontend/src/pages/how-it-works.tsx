@@ -47,7 +47,7 @@ const HowItWorks: NextPage = () => {
   return (
     <div className="min-h-screen pt-16">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-16">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
             How NexProLink Works
@@ -59,13 +59,13 @@ const HowItWorks: NextPage = () => {
       </div>
 
       {/* Steps Section */}
-      <div className="py-16 bg-white dark:bg-gray-900">
+      <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Simple Steps to Get Started
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400">
+            <p className="text-xl text-gray-600">
               Professional consultation in four easy steps
             </p>
           </div>
@@ -74,18 +74,18 @@ const HowItWorks: NextPage = () => {
             {steps.map((step, index) => (
               <div
                 key={step.title}
-                className="relative p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+                className="relative p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-300"
               >
-                <div className="absolute -top-4 left-6 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold">
+                <div className="absolute -top-4 left-6 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
                   {index + 1}
                 </div>
                 <div className="mb-4 mt-2">
-                  <step.icon className="h-8 w-8 text-primary-600" />
+                  <step.icon className="h-8 w-8 text-indigo-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {step.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600">
                   {step.description}
                 </p>
               </div>
@@ -95,34 +95,34 @@ const HowItWorks: NextPage = () => {
       </div>
 
       {/* Pricing & Features Section */}
-      <div id="pricing" className="py-16 bg-gray-50 dark:bg-gray-800">
+      <div id="pricing" className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Transparent Pricing & Features
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400">
+            <p className="text-xl text-gray-600">
               No hidden fees, no subscriptions - just pay for the time you use
             </p>
           </div>
 
-          <div className="max-w-2xl mx-auto bg-white dark:bg-gray-700 rounded-lg shadow-sm p-6 mb-12">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+          <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6 mb-12 hover:shadow-lg transition-shadow duration-300">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">
               Simple Fee Structure
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-300">Expert's Rate</span>
-                <span className="text-gray-900 dark:text-white font-medium">Set by expert</span>
+                <span className="text-gray-600">Expert's Rate</span>
+                <span className="text-gray-900 font-medium">Set by expert</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-300">Platform Fee</span>
-                <span className="text-gray-900 dark:text-white font-medium">15% of consultation fee</span>
+                <span className="text-gray-600">Platform Fee</span>
+                <span className="text-gray-900 font-medium">15% of consultation fee</span>
               </div>
-              <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+              <div className="border-t border-gray-200 pt-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-900 dark:text-white font-semibold">Total Cost</span>
-                  <span className="text-gray-900 dark:text-white font-semibold">Expert rate + 15%</span>
+                  <span className="text-gray-900 font-semibold">Total Cost</span>
+                  <span className="text-gray-900 font-semibold">Expert rate + 15%</span>
                 </div>
               </div>
             </div>
@@ -132,12 +132,12 @@ const HowItWorks: NextPage = () => {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="p-6 bg-white dark:bg-gray-700 rounded-lg shadow-sm"
+                className="p-6 bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300"
               >
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600">
                   {feature.description}
                 </p>
               </div>
@@ -147,21 +147,21 @@ const HowItWorks: NextPage = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="py-16 bg-white dark:bg-gray-900">
+      <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">
             Ready to Connect with an Expert?
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="/experts"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              href="/consultants"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-300"
             >
               Browse Experts
             </a>
             <a
               href="/pricing"
-              className="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 text-base font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-300"
             >
               Learn More About Pricing
             </a>

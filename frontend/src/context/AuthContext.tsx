@@ -8,6 +8,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   error: string | null;
+  isExpert: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
     email: string,
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isExpert = userProfile?.userType === 'expert';
 
   useEffect(() => {
     if (typeof window !== 'undefined' && auth) {
@@ -115,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     loading,
     error,
+    isExpert,
     login,
     register,
     googleSignIn,

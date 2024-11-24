@@ -1,136 +1,245 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { 
+  ArrowRightOnRectangleIcon as LoginIcon, 
+  ArrowLeftOnRectangleIcon as LogoutIcon, 
+  Bars3Icon as MenuIcon, 
+  UserPlusIcon as UserAddIcon, 
+  XMarkIcon as XIcon,
+  MoonIcon,
+  SunIcon
+} from '@heroicons/react/24/outline';
 import { useAuth } from '@/context/AuthContext';
-import AuthModal from '@/components/auth/AuthModal';
-import { useTheme } from 'next-themes';
-import { SunIcon, MoonIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { useTheme } from '@/context/ThemeContext';
 
 const Navigation = () => {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
   const { user, userProfile, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
-  const handleLogout = async () => {
+  const toggleMenu = () => setIsOpen(!isOpen);
+
+  const handleSignOut = async () => {
     try {
       await logout();
+      router.push('/');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Error signing out:', error);
     }
   };
 
+  // Show verification banner if email is not verified
+  const showVerificationBanner = user && !user.emailVerified;
+
   const getNavigationItems = () => {
-    if (!userProfile) return [];
+    if (!userProfile) {
+      return [
+        { name: 'Home', href: '/' },
+        { name: 'Find Experts', href: '/experts' },
+        { name: 'How It Works', href: '/#how-it-works' },
+      ];
+    }
 
     switch (userProfile.userType) {
       case 'admin':
         return [
-          { href: '/admin/dashboard', label: 'Dashboard' },
-          { href: '/admin/experts/pending', label: 'Pending Experts' },
-          { href: '/admin/experts/approved', label: 'Approved Experts' },
-          { href: '/admin/clients', label: 'Clients' },
-          { href: '/admin/analytics', label: 'Analytics' }
+          { name: 'Dashboard', href: '/admin/dashboard' },
+          { name: 'Pending Experts', href: '/admin/experts/pending' },
+          { name: 'Approved Experts', href: '/admin/experts/approved' },
+          { name: 'Clients', href: '/admin/clients' },
+          { name: 'Analytics', href: '/admin/analytics' }
         ];
       case 'expert':
         return [
-          { href: '/expert/dashboard', label: 'Dashboard' },
-          { href: '/expert/profile', label: 'Profile' },
-          { href: '/expert/availability', label: 'Availability' },
-          { href: '/expert/bookings', label: 'Bookings' },
-          { href: '/expert/earnings', label: 'Earnings' }
+          { name: 'Dashboard', href: '/expert/dashboard' },
+          { name: 'Profile', href: '/expert/profile' },
+          { name: 'Availability', href: '/expert/availability' },
+          { name: 'Bookings', href: '/expert/bookings' },
+          { name: 'Earnings', href: '/expert/earnings' }
         ];
       case 'client':
         return [
-          { href: '/client/dashboard', label: 'Dashboard' },
-          { href: '/client/bookings', label: 'My Bookings' },
-          { href: '/client/experts', label: 'Find Experts' },
-          { href: '/client/payments', label: 'Payment Methods' }
+          { name: 'Dashboard', href: '/client/dashboard' },
+          { name: 'My Bookings', href: '/client/bookings' },
+          { name: 'Find Experts', href: '/client/experts' },
+          { name: 'Payment Methods', href: '/client/payments' }
         ];
       default:
         return [];
     }
   };
 
+  const navigationItems = getNavigationItems();
+
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 shadow-md">
+      {showVerificationBanner && (
+        <div className={`border-b ${isDarkMode ? 'bg-yellow-900 border-yellow-800' : 'bg-yellow-50 border-yellow-200'}`}>
+          <div className="max-w-7xl mx-auto py-2 px-3 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between flex-wrap">
+              <div className="w-0 flex-1 flex items-center">
+                <span className={`flex p-2 rounded-lg ${isDarkMode ? 'bg-yellow-800' : 'bg-yellow-100'}`}>
+                  <svg className={`h-6 w-6 ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </span>
+                <p className={`ml-3 font-medium ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'} truncate`}>
+                  <span className="hidden md:inline">Please verify your email address to access all features.</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <nav className={`${isDarkMode ? 'bg-gray-900' : 'bg-white'} shadow`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
-              <Link href="/" className="flex items-center">
-                <span className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
+              <div className="flex-shrink-0 flex items-center">
+                <Link href="/" className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   NexProLink
-                </span>
-              </Link>
+                </Link>
+              </div>
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                {navigationItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      router.pathname === item.href
+                        ? `${isDarkMode ? 'border-blue-500 text-white' : 'border-blue-500 text-gray-900'}`
+                        : `${isDarkMode ? 'border-transparent text-gray-300 hover:text-white' : 'border-transparent text-gray-500 hover:text-gray-700'}`
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
             </div>
 
-            <div className="hidden md:flex md:items-center md:space-x-6">
-              {!user && (
-                <>
-                  <Link
-                    href="/experts"
-                    className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
-                  >
-                    Find Experts
-                  </Link>
-                  <Link
-                    href="/how-it-works"
-                    className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500"
-                  >
-                    How It Works
-                  </Link>
-                </>
-              )}
-
-              {user ? (
-                <div className="relative group">
-                  <button className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-500">
-                    <UserCircleIcon className="h-6 w-6" />
-                    <span>{userProfile?.displayName || user.email}</span>
-                  </button>
-                  <div className="absolute right-0 w-48 mt-2 py-2 bg-white dark:bg-gray-800 rounded-md shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                    {getNavigationItems().map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                >
-                  Sign In
-                </button>
-              )}
-
+            <div className="flex items-center">
+              {/* Dark mode toggle */}
               <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                aria-label="Toggle theme"
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-md ${
+                  isDarkMode
+                    ? 'text-gray-300 hover:text-white'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
               >
-                {theme === 'dark' ? (
-                  <SunIcon className="h-6 w-6 text-gray-400" />
+                {isDarkMode ? (
+                  <SunIcon className="h-6 w-6" />
                 ) : (
-                  <MoonIcon className="h-6 w-6 text-gray-600" />
+                  <MoonIcon className="h-6 w-6" />
+                )}
+              </button>
+
+              {/* Authentication buttons */}
+              <div className="hidden sm:ml-6 sm:flex sm:items-center">
+                {user ? (
+                  <button
+                    onClick={handleSignOut}
+                    className={`ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
+                      isDarkMode
+                        ? 'text-white bg-gray-800 hover:bg-gray-700'
+                        : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                    }`}
+                  >
+                    <LogoutIcon className="h-5 w-5 mr-2" />
+                    Sign Out
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      href="/auth/signin"
+                      className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
+                        isDarkMode
+                          ? 'text-white bg-gray-800 hover:bg-gray-700'
+                          : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                      }`}
+                    >
+                      <LoginIcon className="h-5 w-5 mr-2" />
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      className="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                      <UserAddIcon className="h-5 w-5 mr-2" />
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="flex items-center sm:hidden">
+              <button
+                onClick={toggleMenu}
+                className={`inline-flex items-center justify-center p-2 rounded-md ${
+                  isDarkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="sr-only">Open main menu</span>
+                {isOpen ? (
+                  <XIcon className="block h-6 w-6" />
+                ) : (
+                  <MenuIcon className="block h-6 w-6" />
                 )}
               </button>
             </div>
           </div>
         </div>
-      </nav>
 
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+        {/* Mobile menu */}
+        <div className={`${isOpen ? 'block' : 'hidden'} sm:hidden`}>
+          <div className={`pt-2 pb-3 space-y-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+            {navigationItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                  router.pathname === item.href
+                    ? `${isDarkMode ? 'border-blue-500 bg-gray-800 text-white' : 'border-blue-500 bg-blue-50 text-blue-700'}`
+                    : `${isDarkMode ? 'border-transparent text-gray-300 hover:bg-gray-700 hover:text-white' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+            {!user && (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                    isDarkMode
+                      ? 'border-transparent text-gray-300 hover:bg-gray-700 hover:text-white'
+                      : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                  }`}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                    isDarkMode
+                      ? 'border-transparent text-gray-300 hover:bg-gray-700 hover:text-white'
+                      : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                  }`}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
     </>
   );
 };

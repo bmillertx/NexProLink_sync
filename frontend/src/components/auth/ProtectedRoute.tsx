@@ -1,48 +1,37 @@
-import { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  children: React.ReactNode;
   requiredRole?: 'client' | 'expert' | 'admin';
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const router = useRouter();
-  const { user, userProfile, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
-  // Show loading spinner while checking authentication
+  useEffect(() => {
+    if (!loading && typeof window !== 'undefined') {
+      if (!user) {
+        router.push('/auth/signin');
+      } else if (requiredRole && profile?.userType !== requiredRole) {
+        // Redirect to appropriate dashboard based on user role
+        const redirectPath = profile?.userType === 'client' ? '/client/dashboard' :
+                           profile?.userType === 'expert' ? '/expert/dashboard' :
+                           profile?.userType === 'admin' ? '/admin/dashboard' :
+                           '/auth/signin';
+        router.push(redirectPath);
+      }
+    }
+  }, [user, profile, loading, router, requiredRole]);
+
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    if (typeof window !== 'undefined') {
-      router.push('/auth/signin');
-    }
-    return null;
-  }
-
-  // Check role-based access if requiredRole is specified
-  if (requiredRole && userProfile?.userType !== requiredRole) {
-    if (typeof window !== 'undefined') {
-      // Redirect to appropriate dashboard based on user role
-      switch (userProfile?.userType) {
-        case 'client':
-          router.push('/client/dashboard');
-          break;
-        case 'expert':
-          router.push('/expert/dashboard');
-          break;
-        case 'admin':
-          router.push('/admin/dashboard');
-          break;
-        default:
-          router.push('/auth/signin');
-      }
-    }
+  if (!user || (requiredRole && profile?.userType !== requiredRole)) {
     return null;
   }
 
