@@ -2,6 +2,7 @@ import { verifyNetworkStatus } from './networkTest';
 import { testAuthFlow } from './auth/authTest';
 import { testExpertProfileFlow } from './expert/expertProfileTest';
 import { testAppointmentFlow } from './appointment/appointmentTest';
+import { testErrorBoundaries } from './error/errorBoundaryTest';
 
 async function runAllTests() {
   console.log('🔄 Starting system verification...\n');
@@ -45,6 +46,17 @@ async function runAllTests() {
     allTestsPassed = false;
   } else {
     console.log('✅ Appointment scheduling tests passed successfully');
+  }
+
+  // Test Error Boundaries
+  console.log('\nTesting Error Boundaries:');
+  const errorResults = await testErrorBoundaries();
+  if (!errorResults.success) {
+    console.error('❌ Error boundary tests failed:');
+    errorResults.errors.forEach(error => console.error(`  - ${error}`));
+    allTestsPassed = false;
+  } else {
+    console.log('✅ Error boundary tests passed successfully');
   }
 
   if (!allTestsPassed) {
