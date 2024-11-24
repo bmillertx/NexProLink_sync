@@ -39,16 +39,10 @@ export default function Navigation() {
     { name: 'How It Works', href: '/#how-it-works' },
   ];
 
-  const authenticatedItems = profile?.userType === 'expert'
-    ? [
-        { name: 'Dashboard', href: '/dashboard' },
-        { name: 'My Schedule', href: '/schedule' },
-        { name: 'Profile', href: '/profile' },
-      ]
-    : [
-        { name: 'My Consultations', href: '/consultations' },
-        { name: 'Profile', href: '/profile' },
-      ];
+  const authenticatedItems = user && profile ? [
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Profile', href: '/profile' },
+  ] : [];
 
   return (
     <>

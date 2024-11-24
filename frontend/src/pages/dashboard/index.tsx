@@ -1,121 +1,176 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import dashboardService, { DashboardStats } from '@/services/dashboard';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import ErrorAlert from '@/components/common/ErrorAlert';
+import DashboardCard from '@/components/dashboard/DashboardCard';
+import { FaCalendar, FaUsers, FaClock, FaMoneyBillWave } from 'react-icons/fa';
 
 export default function Dashboard() {
-  const { user, profile, loading } = useAuth();
+  const router = useRouter();
+  const { user, profile, loading: authLoading } = useAuth();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (loading) {
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchDashboardData = async () => {
+      if (authLoading) return;
+
+      if (!user || !profile) {
+        router.push('/auth/signin');
+        return;
+      }
+
+      // Check if email is verified
+      if (!user.emailVerified) {
+        if (mounted) {
+          setError('Please verify your email address to access the dashboard.');
+          setLoading(false);
+        }
+        return;
+      }
+
+      // For experts, check if they are verified
+      if (profile.userType === 'expert' && !profile.isVerified) {
+        if (mounted) {
+          setError('Your expert account is pending verification. Please wait for admin approval.');
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const dashboardStats = await dashboardService.getStats(user.uid, profile.userType);
+        if (mounted) {
+          setStats(dashboardStats);
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        if (mounted) {
+          setError('Failed to load dashboard data. Please try again later.');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDashboardData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, profile, router, authLoading]);
+
+  if (authLoading || loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!user || !profile) {
+    return null;
+  }
+
+  if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="container mx-auto px-4 py-8">
+        <ErrorAlert message={error} />
+        {!user.emailVerified && (
+          <div className="mt-4">
+            <button
+              onClick={() => router.push('/auth/verify-email')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Verify Email
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
-  if (!profile) {
+  if (!stats) {
+    return null;
+  }
+
+  const renderClientDashboard = () => {
+    const clientStats = stats.client;
+    if (!clientStats) return null;
+
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">Loading profile...</h2>
-          <p className="mt-2 text-sm text-gray-600">Please wait while we fetch your information.</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DashboardCard
+          title="Total Consultations"
+          value={clientStats.totalConsultations}
+          icon={<FaCalendar className="h-6 w-6 text-blue-500" />}
+        />
+        <DashboardCard
+          title="Connected Experts"
+          value={clientStats.connectedExperts}
+          icon={<FaUsers className="h-6 w-6 text-green-500" />}
+        />
+        <DashboardCard
+          title="Upcoming Sessions"
+          value={clientStats.upcomingSessions}
+          icon={<FaClock className="h-6 w-6 text-yellow-500" />}
+        />
+        <DashboardCard
+          title="Total Spent"
+          value={`$${clientStats.totalSpent.toFixed(2)}`}
+          icon={<FaMoneyBillWave className="h-6 w-6 text-purple-500" />}
+        />
       </div>
     );
-  }
+  };
+
+  const renderExpertDashboard = () => {
+    const expertStats = stats.expert;
+    if (!expertStats) return null;
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DashboardCard
+          title="Total Appointments"
+          value={expertStats.totalAppointments}
+          icon={<FaCalendar className="h-6 w-6 text-blue-500" />}
+        />
+        <DashboardCard
+          title="Active Clients"
+          value={expertStats.activeClients}
+          icon={<FaUsers className="h-6 w-6 text-green-500" />}
+        />
+        <DashboardCard
+          title="Hours Consulted"
+          value={expertStats.hoursConsulted}
+          icon={<FaClock className="h-6 w-6 text-yellow-500" />}
+        />
+        <DashboardCard
+          title="Total Earnings"
+          value={`$${expertStats.totalEarnings.toFixed(2)}`}
+          icon={<FaMoneyBillWave className="h-6 w-6 text-purple-500" />}
+        />
+      </div>
+    );
+  };
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gray-100">
-        <div className="py-10">
-          <header>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h1 className="text-3xl font-bold leading-tight text-gray-900">
-                {profile.role === 'consultant' ? 'Consultant Dashboard' : 'Client Dashboard'}
-              </h1>
-            </div>
-          </header>
-          <main>
-            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-              {/* Main dashboard content */}
-              <div className="px-4 py-8 sm:px-0">
-                <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 p-4">
-                  {profile.role === 'consultant' ? (
-                    <div>
-                      <h2 className="text-lg font-semibold mb-4">Welcome, {profile.displayName}</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white overflow-hidden shadow rounded-lg">
-                          <div className="p-5">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-                                <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </div>
-                              <div className="ml-5 w-0 flex-1">
-                                <dl>
-                                  <dt className="text-sm font-medium text-gray-500 truncate">Upcoming Sessions</dt>
-                                  <dd className="text-lg font-medium text-gray-900">0</dd>
-                                </dl>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="bg-white overflow-hidden shadow rounded-lg">
-                          <div className="p-5">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-                                <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                              </div>
-                              <div className="ml-5 w-0 flex-1">
-                                <dl>
-                                  <dt className="text-sm font-medium text-gray-500 truncate">Active Projects</dt>
-                                  <dd className="text-lg font-medium text-gray-900">0</dd>
-                                </dl>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="bg-white overflow-hidden shadow rounded-lg">
-                          <div className="p-5">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
-                                <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                              </div>
-                              <div className="ml-5 w-0 flex-1">
-                                <dl>
-                                  <dt className="text-sm font-medium text-gray-500 truncate">Tasks</dt>
-                                  <dd className="text-lg font-medium text-gray-900">0</dd>
-                                </dl>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <h2 className="text-lg font-semibold mb-4">Welcome, {profile.displayName}</h2>
-                      <p className="text-gray-600">
-                        Ready to find your next consultant? Browse our selection of experts and book your consultation today.
-                      </p>
-                      <button className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Find Consultants
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </main>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Welcome back, {profile.displayName}!
+        </h1>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
+          Here's an overview of your {profile.userType === 'client' ? 'consultation' : 'business'} activity
+        </p>
       </div>
-    </ProtectedRoute>
+
+      {profile.userType === 'client' ? renderClientDashboard() : renderExpertDashboard()}
+    </div>
   );
 }
