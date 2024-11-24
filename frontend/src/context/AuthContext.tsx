@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from 'firebase/auth';
 import { auth } from '@/config/firebase';
-import authService, { UserProfile } from '@/services/auth';
+import authService, { UserProfile, ExpertRegistrationData } from '@/services/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -9,7 +9,14 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string, userType: 'client' | 'expert') => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    displayName: string,
+    userType: 'client' | 'expert',
+    expertData?: ExpertRegistrationData
+  ) => Promise<void>;
+  googleSignIn: () => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -23,7 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only run auth state listener on client side
     if (typeof window !== 'undefined' && auth) {
       const unsubscribe = auth.onAuthStateChanged(async (user) => {
         setUser(user);
@@ -39,18 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setLoading(false);
       });
-
-      // Add the helper to window object for debugging
-      if (process.env.NODE_ENV === 'development') {
-        (window as any).signInWithGoogle = async () => {
-          try {
-            await authService.googleSignIn();
-            console.log('Google sign-in successful!');
-          } catch (error) {
-            console.error('Google sign-in failed:', error);
-          }
-        };
-      }
 
       return () => unsubscribe();
     } else {
@@ -68,10 +62,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, displayName: string, userType: 'client' | 'expert') => {
+  const register = async (
+    email: string,
+    password: string,
+    displayName: string,
+    userType: 'client' | 'expert',
+    expertData?: ExpertRegistrationData
+  ) => {
     try {
       setError(null);
-      await authService.register(email, password, displayName, userType);
+      await authService.register(email, password, displayName, userType, expertData);
+    } catch (error: any) {
+      setError(error.message);
+      throw error;
+    }
+  };
+
+  const googleSignIn = async () => {
+    try {
+      setError(null);
+      await authService.googleSignIn();
     } catch (error: any) {
       setError(error.message);
       throw error;
@@ -107,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     login,
     register,
+    googleSignIn,
     logout,
     resetPassword,
   };
