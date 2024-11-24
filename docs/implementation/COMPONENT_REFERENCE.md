@@ -3,156 +3,247 @@
 ## Authentication Components
 
 ### AuthProvider
-```javascript
-// components/auth/AuthProvider.js
+```typescript
+// hooks/useAuth.tsx
 // Manages authentication state and provides auth context to the app
+
+interface AuthContextType {
+  user: User | null;
+  profile: UserProfile | null;
+  loading: boolean;
+  isExpert: boolean;
+  signIn: (email: string, password: string) => Promise<UserProfile>;
+  signUp: (email: string, password: string, displayName: string, role: 'client' | 'expert') => Promise<UserProfile>;
+  signInWithGoogle: () => Promise<UserProfile>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+}
 ```
 
 ### ProtectedRoute
-```javascript
-// components/auth/ProtectedRoute.js
+```typescript
+// components/auth/ProtectedRoute.tsx
 // HOC for protecting routes based on authentication and role
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRole?: 'client' | 'expert' | 'admin';
+}
+
+const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
+  const router = useRouter();
+  const { user, profile, loading } = useAuth();
+
+  // Redirects to appropriate dashboard based on user role
+  useEffect(() => {
+    if (!loading && typeof window !== 'undefined') {
+      if (!user) {
+        router.push('/auth/signin');
+      } else if (requiredRole && profile?.userType !== requiredRole) {
+        const redirectPath = profile?.userType === 'client' ? '/client/dashboard' :
+                           profile?.userType === 'expert' ? '/expert/dashboard' :
+                           profile?.userType === 'admin' ? '/admin/dashboard' :
+                           '/auth/signin';
+        router.push(redirectPath);
+      }
+    }
+  }, [user, profile, loading, router, requiredRole]);
+};
 ```
 
-### RoleBasedAccess
-```javascript
-// components/auth/RoleBasedAccess.js
-// Component for conditional rendering based on user role
+### AuthModal
+```typescript
+// components/auth/AuthModal.tsx
+// Modal component for login and registration
+
+interface AuthModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const { signIn, signUp, signInWithGoogle } = useAuth();
+
+  // Handles form submission for both login and registration
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isLogin) {
+        await signIn(email, password);
+      } else {
+        await signUp(email, password, displayName, userType);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Auth error:', error);
+      toast.error(error instanceof Error ? error.message : 'Authentication failed');
+    }
+  };
+};
+```
+
+### NetworkStatus
+```typescript
+// components/common/NetworkStatus.tsx
+// Displays network connection status
+
+export function NetworkStatus() {
+  const { online } = useNetwork();
+  
+  return (
+    <div className={cn(
+      'fixed bottom-4 right-4 flex items-center gap-2 rounded-full px-4 py-2 text-sm',
+      online ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+    )}>
+      {online ? <CloudIcon className="h-5 w-5" /> : <ArrowPathIcon className="h-5 w-5 animate-spin" />}
+      <span>{online ? 'Connected' : 'Connecting...'}</span>
+    </div>
+  );
+}
 ```
 
 ## Dashboard Components
 
-### Admin Dashboard
-```javascript
-// components/admin/Dashboard.js
-// Main admin dashboard layout and functionality
+### AdminDashboard
+```typescript
+// components/admin/Dashboard.tsx
+// Main admin dashboard with user management and analytics
+
+interface AdminDashboardProps {
+  stats: {
+    totalUsers: number;
+    activeExperts: number;
+    pendingExperts: number;
+    totalBookings: number;
+  };
+}
 ```
 
-### Expert Dashboard
-```javascript
-// components/expert/Dashboard.js
-// Main expert dashboard layout and functionality
+### ExpertDashboard
+```typescript
+// components/expert/Dashboard.tsx
+// Expert dashboard with booking management and availability
+
+interface ExpertDashboardProps {
+  bookings: Booking[];
+  availability: AvailabilitySlot[];
+}
 ```
 
-### Client Dashboard
-```javascript
-// components/client/Dashboard.js
-// Main client dashboard layout and functionality
+### ClientDashboard
+```typescript
+// components/client/Dashboard.tsx
+// Client dashboard with expert search and booking management
+
+interface ClientDashboardProps {
+  upcomingBookings: Booking[];
+  recommendedExperts: Expert[];
+}
 ```
 
 ## Form Components
 
-### SignUpForm
-```javascript
-// components/auth/SignUpForm.js
-// Handles user registration with role selection
+### ExpertRegistrationForm
+```typescript
+// components/forms/ExpertRegistrationForm.tsx
+// Extended registration form for experts
+
+interface ExpertRegistrationFormProps {
+  onSubmit: (data: ExpertRegistrationData) => Promise<void>;
+  loading: boolean;
+}
+
+interface ExpertRegistrationData {
+  professionalTitle: string;
+  specialties: string[];
+  yearsOfExperience: number;
+  hourlyRate: number;
+  bio: string;
+}
 ```
 
-### SignInForm
-```javascript
-// components/auth/SignInForm.js
-// Handles user authentication
-```
+### BookingForm
+```typescript
+// components/forms/BookingForm.tsx
+// Form for scheduling consultations
 
-### ExpertProfileForm
-```javascript
-// components/expert/ProfileForm.js
-// Expert profile creation and editing
+interface BookingFormProps {
+  expertId: string;
+  availableSlots: AvailabilitySlot[];
+  onSubmit: (data: BookingData) => Promise<void>;
+}
 ```
 
 ## Layout Components
 
-### DashboardLayout
-```javascript
-// components/layout/DashboardLayout.js
-// Common layout for all dashboard pages
+### Layout
+```typescript
+// components/layout/Layout.tsx
+// Main layout wrapper with navigation and auth state
+
+interface LayoutProps {
+  children: React.ReactNode;
+  requireAuth?: boolean;
+  requiredRole?: 'client' | 'expert' | 'admin';
+}
 ```
 
 ### Navigation
-```javascript
-// components/layout/Navigation.js
+```typescript
+// components/layout/Navigation.tsx
 // Role-based navigation menu
+
+interface NavigationProps {
+  userType: 'client' | 'expert' | 'admin';
+}
 ```
 
-## Utility Components
+## Common Components
 
 ### LoadingSpinner
-```javascript
-// components/common/LoadingSpinner.js
-// Loading state indicator
+```typescript
+// components/common/LoadingSpinner.tsx
+// Reusable loading indicator
+
+interface LoadingSpinnerProps {
+  size?: 'sm' | 'md' | 'lg';
+  color?: string;
+}
 ```
 
 ### ErrorBoundary
-```javascript
-// components/common/ErrorBoundary.js
-// Error handling wrapper
+```typescript
+// components/common/ErrorBoundary.tsx
+// Error boundary for component error handling
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}
 ```
 
-### Toast
-```javascript
-// components/common/Toast.js
-// Notification system
-```
+## Best Practices
 
-## Custom Hooks
+1. **Type Safety**
+   - Use TypeScript interfaces for all props
+   - Implement proper error handling
+   - Validate all user inputs
 
-### useAuth
-```javascript
-// hooks/useAuth.js
-// Authentication state and methods
-```
+2. **Performance**
+   - Implement proper loading states
+   - Use React.memo for expensive renders
+   - Optimize re-renders with useMemo/useCallback
 
-### useFirestore
-```javascript
-// hooks/useFirestore.js
-// Firestore operations wrapper
-```
+3. **Security**
+   - Validate all authentication states
+   - Implement proper role checks
+   - Sanitize user inputs
 
-### useRole
-```javascript
-// hooks/useRole.js
-// Role-based permissions and access control
-```
-
-## API Services
-
-### AuthService
-```javascript
-// services/auth.js
-// Firebase authentication methods
-```
-
-### UserService
-```javascript
-// services/user.js
-// User management operations
-```
-
-### BookingService
-```javascript
-// services/booking.js
-// Booking system operations
-```
-
-## Constants
-
-### Routes
-```javascript
-// constants/routes.js
-// Application routes configuration
-```
-
-### Roles
-```javascript
-// constants/roles.js
-// User role definitions and permissions
-```
-
-### ErrorCodes
-```javascript
-// constants/errorCodes.js
-// Error code definitions and messages
-```
+4. **Accessibility**
+   - Use semantic HTML
+   - Implement proper ARIA attributes
+   - Ensure keyboard navigation
 
 ## Component Dependencies
 ```
@@ -171,7 +262,7 @@ AuthProvider
 ## State Management
 
 ### Authentication State
-```javascript
+```typescript
 {
   user: {
     uid: string,
@@ -185,7 +276,7 @@ AuthProvider
 ```
 
 ### Dashboard State
-```javascript
+```typescript
 {
   experts: Expert[],
   clients: Client[],
@@ -199,8 +290,8 @@ AuthProvider
 ## Testing Examples
 
 ### Component Test
-```javascript
-// __tests__/components/auth/SignUpForm.test.js
+```typescript
+// __tests__/components/auth/SignUpForm.test.tsx
 describe('SignUpForm', () => {
   it('should handle role selection', () => {
     // Test implementation
@@ -209,8 +300,8 @@ describe('SignUpForm', () => {
 ```
 
 ### Hook Test
-```javascript
-// __tests__/hooks/useAuth.test.js
+```typescript
+// __tests__/hooks/useAuth.test.tsx
 describe('useAuth', () => {
   it('should manage authentication state', () => {
     // Test implementation
@@ -221,12 +312,16 @@ describe('useAuth', () => {
 ## Style Guide
 
 ### Component Structure
-```javascript
+```typescript
 // Template for new components
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const ComponentName = ({ prop1, prop2 }) => {
+interface ComponentProps {
+  // Define props here
+}
+
+const ComponentName = ({ prop1, prop2 }: ComponentProps) => {
   // Component logic
   return (
     // JSX
@@ -252,14 +347,3 @@ export default ComponentName;
   /* styles */
 }
 ```
-
-## Best Practices
-
-1. Use TypeScript for better type safety
-2. Implement proper error boundaries
-3. Use React.memo for performance optimization
-4. Follow atomic design principles
-5. Write comprehensive tests
-6. Document component APIs
-7. Use proper prop validation
-8. Implement accessibility features

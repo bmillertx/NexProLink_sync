@@ -1,15 +1,15 @@
-const { initializeApp } = require('firebase/app');
-const { getAuth, createUserWithEmailAndPassword, sendEmailVerification } = require('firebase/auth');
-const { getFirestore, doc, setDoc, serverTimestamp } = require('firebase/firestore');
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAUWz7jfrt8aNdZ1unL0LT_vVIE4QHOD0k",
-  authDomain: "nexprolink-dev.firebaseapp.com",
-  projectId: "nexprolink-dev",
-  storageBucket: "nexprolink-dev.appspot.com",
-  messagingSenderId: "747271305155",
-  appId: "1:747271305155:web:d1f5c4b93b9c4f6e2a2b2a"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase

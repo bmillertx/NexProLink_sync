@@ -1,196 +1,217 @@
 # Authentication and Dashboard Implementation Guide
 
 ## Overview
-This guide outlines the step-by-step process for implementing Firebase Authentication and creating role-based dashboards (Client, Expert, Admin) in NexProLink.
+This guide outlines the implementation of Firebase Authentication and role-based dashboards in NexProLink, with special attention to TypeScript integration and SSR considerations.
 
 ## Table of Contents
-1. [Firebase Setup](#firebase-setup)
-2. [Authentication Implementation](#authentication-implementation)
-3. [Dashboard Structure](#dashboard-structure)
-4. [Implementation Order](#implementation-order)
-5. [Testing Strategy](#testing-strategy)
+1. [Environment Setup](#environment-setup)
+2. [Firebase Configuration](#firebase-configuration)
+3. [Authentication Implementation](#authentication-implementation)
+4. [User Management](#user-management)
+5. [Dashboard Implementation](#dashboard-implementation)
+6. [Testing Strategy](#testing-strategy)
+7. [Troubleshooting](#troubleshooting)
 
-## Firebase Setup
+## Environment Setup
 
-### Current Configuration
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSyDm90o1mH2KJ3Kj_Sa_nWGyM_QLTKpBvRw",
-  authDomain: "video-booking-app-26c0e.firebaseapp.com",
-  projectId: "video-booking-app-26c0e",
-  storageBucket: "video-booking-app-26c0e.firebasestorage.app",
-  messagingSenderId: "63025205224",
-  appId: "1:63025205224:web:6808effae3c1e33eb41e5d",
-  measurementId: "G-205LM2W36S"
+### Environment Variables
+Create a `.env.local` file in the frontend directory:
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+```
+
+### Required Dependencies
+```json
+{
+  "dependencies": {
+    "firebase": "^10.7.0",
+    "next": "14.1.0",
+    "react": "18.2.0"
+  }
 }
 ```
 
-## Implementation Order
+## Firebase Configuration
 
-### 1. Core Authentication (Priority 1)
-- Firebase initialization
-- Basic authentication routes
-- Protected route middleware
-- User session management
+### Initialization Pattern
+```typescript
+// config/firebase.ts
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
-### 2. User Management (Priority 2)
-- User roles (Client, Expert, Admin)
-- User profile data structure
-- Role-based access control
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+};
 
-### 3. Dashboard Implementation (Priority 3)
-- Admin Dashboard
-  - Expert approval system
-  - User management
-  - System analytics
-- Expert Dashboard
-  - Profile management
-  - Availability settings
-  - Booking management
-- Client Dashboard
-  - Expert search
-  - Booking system
-  - Payment integration
+// Initialize Firebase for SSR
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-## Required Pages
+export { app, auth, db };
+```
 
-### Authentication Pages
-- `/auth/signin`
-- `/auth/signup`
-- `/auth/forgot-password`
-- `/auth/reset-password`
+## Authentication Implementation
 
-### Admin Pages
-- `/admin/dashboard`
-- `/admin/experts/pending`
-- `/admin/experts/approved`
-- `/admin/clients`
-- `/admin/analytics`
-
-### Expert Pages
-- `/expert/dashboard`
-- `/expert/profile`
-- `/expert/availability`
-- `/expert/bookings`
-- `/expert/earnings`
-
-### Client Pages
-- `/client/dashboard`
-- `/client/bookings`
-- `/client/experts`
-- `/client/payments`
-
-## Data Structure
-
-### Firestore Collections
-```javascript
-// Users Collection
-users/{userId} {
-  role: "client" | "expert" | "admin",
-  email: string,
-  displayName: string,
-  createdAt: timestamp,
-  lastLogin: timestamp
+### Auth Service
+```typescript
+// services/auth/auth.service.ts
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  userType: 'client' | 'expert' | 'admin';
+  createdAt: Date;
+  updatedAt: Date;
+  emailVerified: boolean;
+  specialties?: string[];
 }
 
-// Experts Collection
-experts/{expertId} {
-  userId: string,
-  status: "pending" | "approved" | "rejected",
-  expertise: string[],
-  hourlyRate: number,
-  availability: object,
-  ratings: number,
-  reviews: array
+export const signIn = async (email: string, password: string): Promise<UserProfile>;
+export const signUp = async (
+  email: string, 
+  password: string, 
+  displayName: string, 
+  role: 'client' | 'expert'
+): Promise<UserProfile>;
+export const signInWithGoogle = async (): Promise<UserProfile>;
+```
+
+### Auth Context
+```typescript
+// hooks/useAuth.tsx
+interface AuthContextType {
+  user: User | null;
+  profile: UserProfile | null;
+  loading: boolean;
+  isExpert: boolean;
+  signIn: (email: string, password: string) => Promise<UserProfile>;
+  signUp: (email: string, password: string, displayName: string, role: 'client' | 'expert') => Promise<UserProfile>;
+  signInWithGoogle: () => Promise<UserProfile>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+}
+```
+
+### Protected Routes
+```typescript
+// components/auth/ProtectedRoute.tsx
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRole?: 'client' | 'expert' | 'admin';
 }
 
-// Clients Collection
-clients/{clientId} {
-  userId: string,
-  bookings: array,
-  paymentMethods: array
+const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
+  // Implementation details in component reference
+};
+```
+
+## User Management
+
+### User Profile Structure
+```typescript
+interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  userType: 'client' | 'expert' | 'admin';
+  createdAt: Date;
+  updatedAt: Date;
+  emailVerified: boolean;
+  specialties?: string[];
 }
+```
+
+### Role-Based Access Control
+- Client: Basic profile, booking functionality
+- Expert: Extended profile, availability management
+- Admin: System management, user oversight
+
+## Dashboard Implementation
+
+### Route Structure
+```
+/pages
+├── auth
+│   ├── signin.tsx
+│   └── signup.tsx
+├── admin
+│   ├── dashboard.tsx
+│   └── users.tsx
+├── expert
+│   ├── dashboard.tsx
+│   └── profile.tsx
+└── client
+    ├── dashboard.tsx
+    └── bookings.tsx
 ```
 
 ## Testing Strategy
 
 ### Unit Tests
-- Authentication flows
-- Role-based access
-- Dashboard components
-- Form validations
+- Authentication service methods
+- Protected route behavior
+- Role-based access control
 
 ### Integration Tests
 - User registration flow
-- Expert approval process
-- Booking system
-- Payment processing
+- Login process
+- Dashboard access control
 
-### End-to-End Tests
+### E2E Tests
 - Complete user journeys
 - Cross-role interactions
-- Error scenarios
 
-## Security Rules
+## Troubleshooting
 
-### Firestore Security Rules
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // User profiles
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == userId;
-    }
-    
-    // Experts
-    match /experts/{expertId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == expertId || 
-                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    // Clients
-    match /clients/{clientId} {
-      allow read: if request.auth.uid == clientId;
-      allow write: if request.auth.uid == clientId;
-    }
-  }
+### Common Issues
+
+1. Firebase Initialization
+```typescript
+// Check if window is defined for SSR
+if (typeof window !== 'undefined') {
+  // Firebase initialization code
 }
 ```
 
-## Error Handling
-
-### Common Error Scenarios
-1. Authentication failures
-2. Invalid role access
-3. Network issues
-4. Data validation errors
-
-### Error Response Structure
-```javascript
-{
-  code: string,
-  message: string,
-  details?: object
-}
+2. Auth State Updates
+```typescript
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    setLoading(true);
+    try {
+      if (user) {
+        const profile = await getUserProfile(user.uid);
+        setProfile(profile);
+      }
+    } catch (error) {
+      console.error('Auth state update error:', error);
+    } finally {
+      setLoading(false);
+    }
+  });
+  return () => unsubscribe();
+}, []);
 ```
 
-## Development Process
+3. Role-Based Routing
+```typescript
+const redirectPath = profile?.userType === 'client' ? '/client/dashboard' :
+                    profile?.userType === 'expert' ? '/expert/dashboard' :
+                    profile?.userType === 'admin' ? '/admin/dashboard' :
+                    '/auth/signin';
+```
 
-1. Setup Firebase configuration
-2. Implement core authentication
-3. Create protected routes
-4. Build user management system
-5. Develop role-based dashboards
-6. Implement booking system
-7. Add payment integration
-8. Deploy and test
-
-## Notes
-- Always use environment variables for sensitive data
-- Implement proper error handling
-- Follow security best practices
-- Maintain consistent coding style
-- Document all major components
+### Error Handling
+```typescript
+try {
+  // Auth operation
+} catch (error) {
+  console.error('Operation error:', error);
+  throw error instanceof Error ? error : new Error('Authentication failed');
+}

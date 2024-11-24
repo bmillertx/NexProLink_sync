@@ -3,7 +3,7 @@ import Footer from './Footer';
 import Navigation from './Navigation';
 import { Toaster } from 'react-hot-toast';
 import { useTheme } from 'next-themes';
-import { AuthProvider } from '@/hooks/useAuth';
+import { AuthProvider } from '@/context/AuthContext';
 import { NetworkStatus } from '../common/NetworkStatus';
 import { NetworkNotification } from '../common/NetworkNotification';
 

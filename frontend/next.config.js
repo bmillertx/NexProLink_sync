@@ -25,7 +25,8 @@ const nextConfig = {
   },
   // Development server configuration
   serverRuntimeConfig: {
-    port: 3004
+    port: 3004,
+    hostname: '0.0.0.0' // Allow connections from all network interfaces
   }
 }
 

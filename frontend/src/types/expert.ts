@@ -1,24 +1,35 @@
+export interface ExpertAvailability {
+  dayOfWeek: number; // 0-6 (Sunday-Saturday)
+  startTime: string;
+  endTime: string;
+  breakStart?: string;
+  breakEnd?: string;
+}
+
 export interface Expert {
-  id: number | string;
+  id: string | number;
   name: string;
   title: string;
+  specialization: string;
+  imageUrl?: string;
+  bio?: string;
+  availability: ExpertAvailability[];
   rating: number;
-  reviewCount: number;
+  totalReviews: number;
   hourlyRate: number;
-  availability: string;
+  languages: string[];
+  videoCallAvailable?: boolean;
+  inPersonAvailable?: boolean;
   expertise: string[];
-  image: string;
   experienceLevel: string;
   description: string;
-  languages: string[];
   location: string;
   timezone: string;
-  category?: string;
+  category: string;
   education?: Education[];
   certifications?: Certification[];
   portfolio?: PortfolioItem[];
   specialties?: string[];
-  imageUrl?: string;
 }
 
 export interface Education {

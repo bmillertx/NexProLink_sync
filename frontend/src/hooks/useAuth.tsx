@@ -49,6 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       try {
         setLoading(true);
@@ -61,25 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             setProfile(null);
             setIsExpert(false);
-            setLoading(false);
             return;
           }
-          
+
           setUser(user);
           const userProfile = await getUserProfile(user.uid);
-          if (!userProfile) {
-            // If no profile exists, create one
-            const defaultProfile = await createUserProfile(
-              user.uid,
-              user.email || '',
-              user.displayName || 'User',
-              'client' // Default role
-            );
-            setProfile(defaultProfile);
-            setIsExpert(false);
-          } else {
+          if (userProfile) {
             setProfile(userProfile);
             setIsExpert(userProfile.userType === 'expert');
+          } else {
+            console.error('User exists in Auth but not in Firestore');
+            setProfile(null);
+            setIsExpert(false);
           }
         } else {
           setUser(null);
@@ -99,59 +97,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const value = {
+  const value: AuthContextType = {
     user,
     profile,
     loading,
     isExpert,
-    signIn: async (email: string, password: string) => {
-      const userProfile = await login(email, password);
-      setProfile(userProfile);
-      setIsExpert(userProfile.userType === 'expert');
-      return userProfile;
-    },
-    signUp: async (email: string, password: string, displayName: string, role: 'client' | 'expert') => {
-      const userProfile = await register(email, password, displayName, role);
-      // Don't set profile or isExpert here since user needs to verify email first
-      return userProfile;
-    },
-    signInWithGoogle: async () => {
-      const userProfile = await signInWithGoogle();
-      setProfile(userProfile);
-      setIsExpert(userProfile.userType === 'expert');
-      return userProfile;
-    },
+    signIn: login,
+    signUp: register,
+    signInWithGoogle,
     signOut: async () => {
-      try {
-        await signOut(auth);
-        setUser(null);
-        setProfile(null);
-        setIsExpert(false);
-      } catch (error) {
-        console.error('Error signing out:', error);
-        throw error;
-      }
+      if (!auth) throw new Error('Auth not initialized');
+      await auth.signOut();
     },
-    resetPassword: async (email: string) => {
-      await sendPasswordReset(email);
-    },
+    resetPassword: sendPasswordReset,
     updateProfile,
     resendVerificationEmail: async (email: string) => {
-      // Get the user credential first
-      const userCredential = await signInWithEmailAndPassword(auth, email, '');
-      if (userCredential.user) {
-        await sendEmailVerification(userCredential.user);
-      }
-      // Sign out immediately after sending verification email
-      await auth.signOut();
+      if (!auth) throw new Error('Auth not initialized');
+      if (!auth.currentUser) throw new Error('No user signed in');
+      await sendEmailVerification(auth.currentUser);
     },
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -161,3 +128,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default useAuth;
