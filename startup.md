@@ -74,28 +74,6 @@ npm run dev
 
 ## 4. Common Issues
 
-### Port Already in Use
-If you see "EADDRINUSE: address already in use" error:
-```bash
-# Kill all Node.js processes (recommended)
-taskkill /F /IM node.exe
-
-# Alternative: Find and kill specific process
-netstat -ano | findstr :3004
-taskkill /F /PID <process_id>
-```
-
-### Development Server
-The development server runs on port 3004 by default. Access the application at:
-- http://localhost:3004
-
-If you need to use a different port, you can specify it in the package.json:
-```json
-"scripts": {
-  "dev": "next dev -p <your_port>"
-}
-```
-
 ### Firebase Initialization
 If Firebase fails to initialize:
 1. Check `.env.local` variables

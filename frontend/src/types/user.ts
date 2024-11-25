@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -5,8 +7,9 @@ export interface UserProfile {
   photoURL?: string;
   role: 'client' | 'consultant';
   emailVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  status?: 'active' | 'inactive';
   // Payment Integration Fields
   stripeCustomerId?: string;
   stripeAccountId?: string; // For consultants

@@ -15,14 +15,19 @@ export default function SignUp() {
   }, [user, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <AuthForm mode="signup" />
-      <p className="mt-4 text-center text-sm text-gray-600">
-        Already have an account?{' '}
-        <Link href="/auth/signin" className="font-medium text-indigo-600 hover:text-indigo-500">
-          Sign in
-        </Link>
-      </p>
+      <div className="mt-8 text-center">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Already have an account?{' '}
+          <Link 
+            href="/auth/signin" 
+            className="font-medium text-primary-600 hover:text-primary-500"
+          >
+            Sign in
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

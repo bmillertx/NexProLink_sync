@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NextPage } from 'next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import AdminRoute from '@/components/auth/AdminRoute';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import {
@@ -129,90 +129,96 @@ const AdminDashboard: NextPage = () => {
   ];
 
   return (
-    <ProtectedRoute requiredRole="admin">
-      <DashboardLayout title="Admin Dashboard">
-        <div className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {statsCards.map((card) => (
-              <div
-                key={card.title}
-                className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-t-4 ${
+    <DashboardLayout title="Admin Dashboard">
+      <div className="space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {statsCards.map((card) => (
+            <div
+              key={card.title}
+              className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-t-4 ${
+                card.color === 'blue'
+                  ? 'border-blue-500'
+                  : card.color === 'green'
+                  ? 'border-green-500'
+                  : 'border-purple-500'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {card.title}
+                </h2>
+                <card.icon
+                  className={`h-6 w-6 ${
+                    card.color === 'blue'
+                      ? 'text-blue-500'
+                      : card.color === 'green'
+                      ? 'text-green-500'
+                      : 'text-purple-500'
+                  }`}
+                />
+              </div>
+              <div className="space-y-3">
+                {card.stats.map((stat) => (
+                  <div key={stat.label} className="flex justify-between items-center">
+                    <span className="text-gray-600 dark:text-gray-400">{stat.label}:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {isLoading ? '...' : stat.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <button
+                className={`mt-4 w-full px-4 py-2 text-white rounded transition-colors ${
                   card.color === 'blue'
-                    ? 'border-blue-500'
+                    ? 'bg-blue-500 hover:bg-blue-600'
                     : card.color === 'green'
-                    ? 'border-green-500'
-                    : 'border-purple-500'
+                    ? 'bg-green-500 hover:bg-green-600'
+                    : 'bg-purple-500 hover:bg-purple-600'
                 }`}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {card.title}
-                  </h2>
-                  <card.icon
-                    className={`h-6 w-6 ${
-                      card.color === 'blue'
-                        ? 'text-blue-500'
-                        : card.color === 'green'
-                        ? 'text-green-500'
-                        : 'text-purple-500'
-                    }`}
-                  />
-                </div>
-                <div className="space-y-3">
-                  {card.stats.map((stat) => (
-                    <div key={stat.label} className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:text-gray-400">{stat.label}:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {isLoading ? '...' : stat.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  className={`mt-4 w-full px-4 py-2 text-white rounded transition-colors ${
-                    card.color === 'blue'
-                      ? 'bg-blue-500 hover:bg-blue-600'
-                      : card.color === 'green'
-                      ? 'bg-green-500 hover:bg-green-600'
-                      : 'bg-purple-500 hover:bg-purple-600'
-                  }`}
-                >
-                  {card.buttonText}
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Recent Activity
-            </h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded">
-                <div className="flex items-center space-x-4">
-                  <ClockIcon className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      New Expert Registration
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      2 minutes ago
-                    </p>
-                  </div>
-                </div>
-                <button className="text-sm text-blue-500 hover:text-blue-600">
-                  View
-                </button>
-              </div>
-              {/* Add more activity items here */}
+                {card.buttonText}
+              </button>
             </div>
+          ))}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+            Recent Activity
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded">
+              <div className="flex items-center space-x-4">
+                <ClockIcon className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    New Expert Registration
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    2 minutes ago
+                  </p>
+                </div>
+              </div>
+              <button className="text-sm text-blue-500 hover:text-blue-600">
+                View
+              </button>
+            </div>
+            {/* Add more activity items here */}
           </div>
         </div>
-      </DashboardLayout>
-    </ProtectedRoute>
+      </div>
+    </DashboardLayout>
   );
 };
 
-export default AdminDashboard;
+const ProtectedAdminDashboard: NextPage = () => {
+  return (
+    <AdminRoute>
+      <AdminDashboard />
+    </AdminRoute>
+  );
+};
+
+export default ProtectedAdminDashboard;

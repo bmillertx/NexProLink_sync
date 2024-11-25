@@ -8,11 +8,16 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   EmailAuthProvider,
-  reauthenticateWithCredential
+  reauthenticateWithCredential,
+  sendEmailVerification,
+  serverTimestamp,
+  addDoc,
+  collection
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/config/firebase';
 import { UserProfile } from '@/types/user';
+import { useRouter } from 'next/router';
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +25,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, role: 'client' | 'consultant') => Promise<void>;
+  signUp: (email: string, password: string, role: 'client' | 'consultant') => Promise<{ success: boolean, message: string }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
@@ -42,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -67,43 +73,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      setError(null);
+      setLoading(true);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const profileDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
-      if (profileDoc.exists()) {
-        setProfile(profileDoc.data() as UserProfile);
+      if (!userCredential.user.emailVerified) {
+        await signOut(auth);
+        throw new Error('Please verify your email before signing in.');
       }
-    } catch (err) {
-      console.error('Sign in error:', err);
-      setError('Failed to sign in');
-      throw err;
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setProfile(userData as UserProfile);
+        router.push(`/dashboard/${userData.role}`);
+      }
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, role: 'client' | 'consultant') => {
     try {
-      setError(null);
+      setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const newProfile: UserProfile = {
+      await sendEmailVerification(userCredential.user);
+      
+      const userData: UserProfile = {
         uid: userCredential.user.uid,
-        email: email,
+        email,
         displayName: email.split('@')[0],
-        role: role,
+        role,
         emailVerified: false,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        status: 'active',
+        createdAt: serverTimestamp() as any,
+        updatedAt: serverTimestamp() as any,
+        availability: {
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
       };
       
-      await setDoc(doc(db, 'users', userCredential.user.uid), newProfile);
-      await updateProfile(userCredential.user, {
-        displayName: newProfile.displayName
-      });
+      // Create user document
+      await setDoc(doc(db, 'users', userCredential.user.uid), userData);
       
-      setProfile(newProfile);
-    } catch (err) {
-      console.error('Sign up error:', err);
-      setError('Failed to create account');
-      throw err;
+      // Create initial consultation
+      const consultationData = {
+        clientId: role === 'client' ? userCredential.user.uid : null,
+        expertId: role === 'consultant' ? userCredential.user.uid : null,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      
+      await addDoc(collection(db, 'consultations'), consultationData);
+      
+      setProfile(userData);
+      return { success: true, message: 'Please check your email to verify your account.' };
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -137,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
         ...updates,
-        updatedAt: new Date()
+        updatedAt: serverTimestamp()
       });
       
       const updatedProfileDoc = await getDoc(userRef);

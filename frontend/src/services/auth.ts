@@ -7,7 +7,9 @@ import {
   updateProfile,
   sendEmailVerification,
   GoogleAuthProvider,
-  User
+  User,
+  getAuth,
+  UserCredential
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -184,38 +186,14 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   }
 };
 
-export const googleSignIn = async (): Promise<UserProfile> => {
+export const googleSignIn = async (): Promise<UserCredential> => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    const { user } = result;
-
-    // Check if user profile exists
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    let profile: UserProfile;
-
-    if (userDoc.exists()) {
-      profile = userDoc.data() as UserProfile;
-    } else {
-      // Create new profile for Google sign-in users
-      profile = {
-        uid: user.uid,
-        email: user.email!,
-        displayName: user.displayName || 'User',
-        userType: 'client',
-        emailVerified: user.emailVerified,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      await setDoc(doc(db, 'users', user.uid), profile);
-    }
-
-    return profile;
+    const provider = new GoogleAuthProvider();
+    const auth = getAuth();
+    return await signInWithPopup(auth, provider);
   } catch (error) {
     console.error('Google sign-in error:', error);
-    throw errorService.handleError(error, {
-      context: 'google-signin',
-    });
+    throw error;
   }
 };
 

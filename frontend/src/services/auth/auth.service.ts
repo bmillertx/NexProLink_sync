@@ -5,135 +5,135 @@ import {
   sendPasswordResetEmail,
   GoogleAuthProvider,
   sendEmailVerification,
+  signOut,
   User
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/config/firebase';
+import { UserProfile } from '@/types/user';
 
-export interface UserProfile {
-  uid: string;
-  email: string;
-  displayName: string;
-  userType: 'client' | 'expert' | 'admin';
-  createdAt: Date;
-  updatedAt: Date;
-  emailVerified: boolean;
-  specialties?: string[];
-  imageUrl?: string;
-}
-
-export const signIn = async (email: string, password: string): Promise<UserProfile> => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const userProfile = await getUserProfile(userCredential.user.uid);
-    if (!userProfile) {
-      throw new Error('User profile not found');
+class AuthService {
+  async login(email: string, password: string): Promise<UserProfile> {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userProfile = await this.getUserProfile(userCredential.user.uid);
+      if (!userProfile) {
+        throw new Error('User profile not found');
+      }
+      return userProfile;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    return userProfile;
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
   }
-};
 
-export const signUp = async (
-  email: string, 
-  password: string, 
-  displayName: string, 
-  role: 'client' | 'expert'
-): Promise<UserProfile> => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    
-    // Send email verification
-    await sendEmailVerification(user);
-    
-    // Create user profile
-    const userProfile: UserProfile = {
-      uid: user.uid,
-      email: user.email!,
-      displayName,
-      userType: role,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      emailVerified: user.emailVerified,
-    };
-    
-    await setDoc(doc(db, 'users', user.uid), {
-      ...userProfile,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    
-    return userProfile;
-  } catch (error) {
-    console.error('Registration error:', error);
-    throw error;
-  }
-};
-
-export const signInWithGoogle = async (): Promise<UserProfile> => {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-    
-    // Check if user profile exists
-    let userProfile = await getUserProfile(user.uid);
-    
-    if (!userProfile) {
-      // Create new profile for Google sign-in users
-      userProfile = {
+  async register(
+    email: string, 
+    password: string, 
+    displayName: string, 
+    role: 'client' | 'consultant'
+  ): Promise<UserProfile> {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      await sendEmailVerification(user);
+      
+      const userProfile: UserProfile = {
         uid: user.uid,
         email: user.email!,
-        displayName: user.displayName || 'User',
-        userType: 'client', // Default role for Google sign-in
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        emailVerified: user.emailVerified,
+        displayName,
+        role,
+        emailVerified: false,
+        status: 'active',
+        createdAt: serverTimestamp() as any,
+        updatedAt: serverTimestamp() as any,
+        availability: {
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
       };
       
-      await setDoc(doc(db, 'users', user.uid), {
-        ...userProfile,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      await setDoc(doc(db, 'users', user.uid), userProfile);
+      
+      return userProfile;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
     }
-    
-    return userProfile;
-  } catch (error) {
-    console.error('Google sign-in error:', error);
-    throw error;
   }
-};
 
-export const resetPassword = async (email: string): Promise<void> => {
-  try {
-    await sendPasswordResetEmail(auth, email);
-  } catch (error) {
-    console.error('Password reset error:', error);
-    throw error;
-  }
-};
-
-export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
-  try {
-    const userDoc = await getDoc(doc(db, 'users', uid));
-    if (userDoc.exists()) {
-      return userDoc.data() as UserProfile;
+  async googleSignIn(): Promise<UserProfile> {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      let userProfile = await this.getUserProfile(user.uid);
+      
+      if (!userProfile) {
+        userProfile = {
+          uid: user.uid,
+          email: user.email!,
+          displayName: user.displayName || user.email!.split('@')[0],
+          role: 'client',
+          emailVerified: user.emailVerified,
+          status: 'active',
+          createdAt: serverTimestamp() as any,
+          updatedAt: serverTimestamp() as any,
+          availability: {
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          }
+        };
+        
+        await setDoc(doc(db, 'users', user.uid), userProfile);
+      }
+      
+      return userProfile;
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      throw error;
     }
-    return null;
-  } catch (error) {
-    console.error('Get user profile error:', error);
-    throw error;
   }
-};
 
-export const resendVerificationEmail = async (user: User): Promise<void> => {
-  try {
-    await sendEmailVerification(user);
-  } catch (error) {
-    console.error('Email verification error:', error);
-    throw error;
+  async logout(): Promise<void> {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
   }
-};
+
+  async resetPassword(email: string): Promise<void> {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  }
+
+  async getUserProfile(uid: string): Promise<UserProfile | null> {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      return userDoc.exists() ? userDoc.data() as UserProfile : null;
+    } catch (error) {
+      console.error('Get user profile error:', error);
+      throw error;
+    }
+  }
+
+  async resendVerificationEmail(): Promise<void> {
+    if (!auth.currentUser) {
+      throw new Error('No user is currently signed in');
+    }
+    try {
+      await sendEmailVerification(auth.currentUser);
+    } catch (error) {
+      console.error('Verification email error:', error);
+      throw error;
+    }
+  }
+}
+
+const authService = new AuthService();
+export default authService;
