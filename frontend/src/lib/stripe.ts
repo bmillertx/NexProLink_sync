@@ -1,8 +1,9 @@
-import { Stripe, loadStripe } from '@stripe/stripe-js';
+import Stripe from 'stripe';
+import { Stripe as StripeClient, loadStripe } from '@stripe/stripe-js';
 import { getApp } from 'firebase/app';
 import { getStripePayments } from '@stripe/firestore-stripe-payments';
 
-let stripePromise: Promise<Stripe | null>;
+let stripePromise: Promise<StripeClient | null>;
 
 export const getStripe = () => {
   if (!stripePromise) {
@@ -20,7 +21,6 @@ export const payments = getStripePayments(app, {
 });
 
 // Server-side Stripe instance
-import Stripe from 'stripe';
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16', // Use the latest API version
   typescript: true,
