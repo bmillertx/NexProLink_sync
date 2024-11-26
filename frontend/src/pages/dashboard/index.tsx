@@ -157,7 +157,7 @@ export default function Dashboard() {
       return;
     }
 
-    if (!user) {
+    if (!user || !profile) {
       router.replace('/auth/signin');
       return;
     }
@@ -182,17 +182,24 @@ export default function Dashboard() {
       return;
     }
 
-    fetchDashboardData().catch(err => {
-      console.error('Error in dashboard effect:', err);
-      setError(err.message || 'Failed to load dashboard data');
-      setLoading(false);
-    });
+    // Redirect based on role
+    if (profile.role === 'consultant') {
+      router.push('/dashboard/consultant');
+    } else if (profile.role === 'client') {
+      router.push('/dashboard/client');
+    } else {
+      fetchDashboardData().catch(err => {
+        console.error('Error in dashboard effect:', err);
+        setError(err.message || 'Failed to load dashboard data');
+        setLoading(false);
+      });
+    }
   }, [user, profile, authLoading, router]);
 
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         <div className="ml-3 text-sm text-gray-500">Loading dashboard...</div>
       </div>
     );
@@ -201,34 +208,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            {error}
-          </h2>
-          <div className="space-x-4">
-            {error.includes('verify your email') ? (
-              <button
-                onClick={() => router.push('/auth/verify-email')}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Verify Email
-              </button>
-            ) : (
-              <button
-                onClick={() => fetchDashboardData()}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Retry
-              </button>
-            )}
-            <button
-              onClick={() => router.replace('/auth/signin')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Return to Sign In
-            </button>
-          </div>
-        </div>
+        <div className="text-red-500">{error}</div>
       </div>
     );
   }

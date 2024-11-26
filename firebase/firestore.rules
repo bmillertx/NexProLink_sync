@@ -26,6 +26,11 @@ service cloud.firestore {
       return hasRole('admin');
     }
 
+    function isApprovedUser() {
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return userData.isApproved == true && userData.status == 'active';
+    }
+
     // User profiles
     match /users/{userId} {
       // Anyone can read basic profile info
@@ -42,6 +47,26 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only the consultant can create/update their profile
       allow create, update: if isOwner(consultantId) && isConsultant();
+      allow delete: if isAdmin();
+    }
+
+    // Consultations
+    match /consultations/{consultationId} {
+      // Both client and consultant can read their consultations
+      allow read: if isAuthenticated() && isApprovedUser() && (
+        resource.data.clientId == request.auth.uid ||
+        resource.data.consultantId == request.auth.uid ||
+        isAdmin()
+      );
+      // Clients can create consultations
+      allow create: if isClient() && isApprovedUser() &&
+        request.resource.data.clientId == request.auth.uid;
+      // Both parties can update the consultation
+      allow update: if isAuthenticated() && isApprovedUser() && (
+        resource.data.clientId == request.auth.uid ||
+        resource.data.consultantId == request.auth.uid ||
+        isAdmin()
+      );
       allow delete: if isAdmin();
     }
     
