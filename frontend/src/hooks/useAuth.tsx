@@ -22,6 +22,8 @@ export interface UserProfile {
   emailVerified: boolean;
   createdAt: any;
   updatedAt: any;
+  isApproved?: boolean;
+  status?: string;
 }
 
 interface AuthContextType {
@@ -63,27 +65,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        try {
+      setLoading(true);
+      try {
+        if (user) {
+          // Force refresh token to get latest custom claims
+          await user.getIdToken(true);
           const profile = await fetchUserProfile(user.uid);
+          
+          setUser(user);
           if (profile) {
             setProfile(profile);
-          } else {
-            setProfile(null);
+            
+            // Only redirect to dashboard if on the home page or auth pages
+            const currentPath = window.location.pathname;
+            if (currentPath === '/' || currentPath.startsWith('/auth')) {
+              if (profile.role === 'consultant' && (!profile.isApproved || profile.status !== 'active')) {
+                router.push('/consultant/onboarding');
+              } else {
+                router.push('/dashboard');
+              }
+            }
+          } else if (!window.location.pathname.includes('/auth/complete-profile')) {
+            // Only redirect to complete profile if not already there
+            router.push('/auth/complete-profile');
           }
-        } catch (error) {
-          console.error('Error fetching user profile:', error);
-          setError('Error loading user profile');
+        } else {
+          setUser(null);
+          setProfile(null);
+          // Only redirect if on a protected route
+          const currentPath = window.location.pathname;
+          if (currentPath.startsWith('/dashboard') || 
+              currentPath.startsWith('/consultant')) {
+            router.push('/auth/signin');
+          }
         }
-      } else {
-        setProfile(null);
+      } catch (error: any) {
+        console.error('Auth state change error:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const signUp = async (email: string, password: string, displayName: string, role: 'client' | 'consultant') => {
     try {
@@ -97,12 +122,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role,
         emailVerified: user.emailVerified,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        isApproved: role === 'client', // Clients are auto-approved
+        status: role === 'client' ? 'active' : 'pending'
       };
 
       await setDoc(doc(db, 'users', user.uid), profile);
+      
+      // Create customer in Stripe
+      await fetch('/api/stripe/create-customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          email: user.email,
+          role
+        }),
+      });
+
       setProfile(profile);
-      router.push('/dashboard');
+      router.push(role === 'consultant' ? '/consultant/onboarding' : '/dashboard');
     } catch (error: any) {
       console.error('Sign-up error:', error);
       setError(handleAuthError(error));
@@ -114,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       clearError();
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      // Router push is handled in the onAuthStateChanged listener
     } catch (error: any) {
       console.error('Sign-in error:', error);
       setError(handleAuthError(error));
@@ -134,18 +175,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           uid: user.uid,
           email: user.email!,
           displayName: user.displayName || user.email?.split('@')[0] || 'User',
-          role: user.email === 'brian.miller.allen@gmail.com' ? 'admin' : 'client',
+          role: 'client', // Default role for Google sign-in
           emailVerified: user.emailVerified,
           createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+          updatedAt: serverTimestamp(),
+          isApproved: true,
+          status: 'active'
         };
 
         await setDoc(doc(db, 'users', user.uid), profile);
+        
+        // Create customer in Stripe
+        await fetch('/api/stripe/create-customer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.uid,
+            email: user.email,
+            role: 'client'
+          }),
+        });
+
         setProfile(profile);
       } else {
         setProfile(existingProfile);
       }
-      router.push('/dashboard');
     } catch (error: any) {
       console.error('Google sign-in error:', error);
       setError(handleAuthError(error));
@@ -159,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await firebaseSignOut(auth);
       setUser(null);
       setProfile(null);
-      router.push('/auth/signin');
+      router.push('/');
     } catch (error: any) {
       console.error('Sign-out error:', error);
       setError(handleAuthError(error));
