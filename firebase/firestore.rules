@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    function isConsultant() {
+      return hasRole('consultant');
+    }
+    
+    function isClient() {
+      return hasRole('client');
+    }
+    
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    // User profiles
+    match /users/{userId} {
+      // Anyone can read basic profile info
+      allow read: if isAuthenticated();
+      // Only the owner can create/update their profile
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Consultant profiles (public information)
+    match /consultants/{consultantId} {
+      // Anyone can read consultant profiles
+      allow read: if isAuthenticated();
+      // Only the consultant can create/update their profile
+      allow create, update: if isOwner(consultantId) && isConsultant();
+      allow delete: if isAdmin();
+    }
+    
+    // Appointments
+    match /appointments/{appointmentId} {
+      // Both client and consultant can read their appointments
+      allow read: if isAuthenticated() && 
+        (resource.data.clientId == request.auth.uid || 
+         resource.data.consultantId == request.auth.uid);
+      // Clients can create appointments
+      allow create: if isClient() && 
+        request.resource.data.clientId == request.auth.uid;
+      // Both parties can update the appointment
+      allow update: if isAuthenticated() && 
+        (resource.data.clientId == request.auth.uid || 
+         resource.data.consultantId == request.auth.uid);
+    }
+    
+    // Reviews
+    match /reviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if isAuthenticated();
+      // Only clients who had an appointment can create reviews
+      allow create: if isClient() && 
+        exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+        get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.clientId == request.auth.uid;
+      // Only the review author can update
+      allow update: if isOwner(resource.data.authorId);
+      allow delete: if isAdmin();
+    }
+    
+    // Stripe customer data
+    match /customers/{customerId} {
+      allow read, write: if isOwner(customerId);
+    }
+    
+    // Subscription data
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+  }
+}
