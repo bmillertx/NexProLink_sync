@@ -31,11 +31,6 @@ const Footer = () => {
                   Contact Us
                 </button>
               </li>
-              <li>
-                <Link href="/admin/dashboard" className="text-gray-500 dark:text-gray-400 hover:text-primary-500">
-                  Admin Dashboard
-                </Link>
-              </li>
             </ul>
           </div>
 

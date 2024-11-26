@@ -14,6 +14,8 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { handleAuthError } from '@/utils/auth-errors';
 
+const ADMIN_EMAIL = 'brian.miller.allen@gmail.com'; // Admin email
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -32,7 +34,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string, role: 'client' | 'consultant') => Promise<void>;
+  signUp: (email: string, password: string, displayName: string, role: 'client' | 'consultant' | 'admin') => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -81,6 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (currentPath === '/' || currentPath.startsWith('/auth')) {
               if (profile.role === 'consultant' && (!profile.isApproved || profile.status !== 'active')) {
                 router.push('/consultant/onboarding');
+              } else if (profile.role === 'admin') {
+                router.push('/admin/dashboard');
               } else {
                 router.push('/dashboard');
               }
@@ -95,7 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Only redirect if on a protected route
           const currentPath = window.location.pathname;
           if (currentPath.startsWith('/dashboard') || 
-              currentPath.startsWith('/consultant')) {
+              currentPath.startsWith('/consultant') || 
+              currentPath.startsWith('/admin')) {
             router.push('/auth/signin');
           }
         }
@@ -110,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [router]);
 
-  const signUp = async (email: string, password: string, displayName: string, role: 'client' | 'consultant') => {
+  const signUp = async (email: string, password: string, displayName: string, role: 'client' | 'consultant' | 'admin') => {
     try {
       clearError();
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
@@ -123,27 +128,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         emailVerified: user.emailVerified,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        isApproved: role === 'client', // Clients are auto-approved
-        status: role === 'client' ? 'active' : 'pending'
+        isApproved: role === 'client' || role === 'admin', // Clients and admins are auto-approved
+        status: role === 'consultant' ? 'pending' : 'active'
       };
 
       await setDoc(doc(db, 'users', user.uid), profile);
       
-      // Create customer in Stripe
-      await fetch('/api/stripe/create-customer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.uid,
-          email: user.email,
-          role
-        }),
-      });
+      // Create customer in Stripe only for clients and consultants
+      if (role !== 'admin') {
+        await fetch('/api/stripe/create-customer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.uid,
+            email: user.email,
+            role
+          }),
+        });
+      }
 
       setProfile(profile);
-      router.push(role === 'consultant' ? '/consultant/onboarding' : '/dashboard');
+      if (role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (role === 'consultant') {
+        router.push('/consultant/onboarding');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       console.error('Sign-up error:', error);
       setError(handleAuthError(error));
@@ -154,8 +167,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       clearError();
-      await signInWithEmailAndPassword(auth, email, password);
-      // Router push is handled in the onAuthStateChanged listener
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Check if user is admin
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      
+      // If admin email but no profile, create it
+      if (email === ADMIN_EMAIL && !userSnap.exists()) {
+        const adminProfile: UserProfile = {
+          uid: user.uid,
+          email: user.email!,
+          displayName: user.displayName || 'Admin',
+          role: 'admin',
+          emailVerified: user.emailVerified,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          isApproved: true,
+          status: 'active'
+        };
+        
+        await setDoc(userRef, adminProfile);
+        setProfile(adminProfile);
+        router.push('/admin/dashboard');
+        return;
+      }
+      
+      // For existing users, check profile
+      if (userSnap.exists()) {
+        const userData = userSnap.data() as UserProfile;
+        if (userData.role === 'admin') {
+          setProfile(userData);
+          router.push('/admin/dashboard');
+          return;
+        }
+      }
+      
+      // Non-admin users are handled by onAuthStateChanged
     } catch (error: any) {
       console.error('Sign-in error:', error);
       setError(handleAuthError(error));

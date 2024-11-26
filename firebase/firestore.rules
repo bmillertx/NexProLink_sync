@@ -28,16 +28,18 @@ service cloud.firestore {
 
     function isApprovedUser() {
       let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return userData.isApproved == true && userData.status == 'active';
+      return (userData.isApproved == true && userData.status == 'active') || isAdmin();
     }
 
     // User profiles
     match /users/{userId} {
-      // Anyone can read basic profile info
-      allow read: if isAuthenticated();
-      // Only the owner can create/update their profile
+      // Anyone can read basic profile info, admins can read all
+      allow read: if isAuthenticated() || isAdmin();
+      // Only the owner can create their profile
       allow create: if isOwner(userId);
+      // Owner can update their profile, admin can update any profile
       allow update: if isOwner(userId) || isAdmin();
+      // Only admin can delete
       allow delete: if isAdmin();
     }
     
@@ -46,23 +48,22 @@ service cloud.firestore {
       // Anyone can read consultant profiles
       allow read: if isAuthenticated();
       // Only the consultant can create/update their profile
-      allow create, update: if isOwner(consultantId) && isConsultant();
+      allow create, update: if isOwner(consultantId) && (isConsultant() || isAdmin());
       allow delete: if isAdmin();
     }
 
     // Consultations
     match /consultations/{consultationId} {
-      // Both client and consultant can read their consultations
-      allow read: if isAuthenticated() && isApprovedUser() && (
+      // Both client and consultant can read their consultations, admin can read all
+      allow read: if isAuthenticated() && (
         resource.data.clientId == request.auth.uid ||
         resource.data.consultantId == request.auth.uid ||
         isAdmin()
       );
-      // Clients can create consultations
-      allow create: if isClient() && isApprovedUser() &&
-        request.resource.data.clientId == request.auth.uid;
-      // Both parties can update the consultation
-      allow update: if isAuthenticated() && isApprovedUser() && (
+      // Clients can create consultations, admin can create for anyone
+      allow create: if (isClient() && request.resource.data.clientId == request.auth.uid) || isAdmin();
+      // Both parties can update the consultation, admin can update any
+      allow update: if isAuthenticated() && (
         resource.data.clientId == request.auth.uid ||
         resource.data.consultantId == request.auth.uid ||
         isAdmin()
@@ -72,41 +73,47 @@ service cloud.firestore {
     
     // Appointments
     match /appointments/{appointmentId} {
-      // Both client and consultant can read their appointments
-      allow read: if isAuthenticated() && 
-        (resource.data.clientId == request.auth.uid || 
-         resource.data.consultantId == request.auth.uid);
-      // Clients can create appointments
-      allow create: if isClient() && 
-        request.resource.data.clientId == request.auth.uid;
-      // Both parties can update the appointment
-      allow update: if isAuthenticated() && 
-        (resource.data.clientId == request.auth.uid || 
-         resource.data.consultantId == request.auth.uid);
+      // Both client and consultant can read their appointments, admin can read all
+      allow read: if isAuthenticated() && (
+        resource.data.clientId == request.auth.uid || 
+        resource.data.consultantId == request.auth.uid ||
+        isAdmin()
+      );
+      // Clients can create appointments, admin can create for anyone
+      allow create: if isClient() && request.resource.data.clientId == request.auth.uid || isAdmin();
+      // Both parties can update the appointment, admin can update any
+      allow update: if isAuthenticated() && (
+        resource.data.clientId == request.auth.uid || 
+        resource.data.consultantId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
     }
     
     // Reviews
     match /reviews/{reviewId} {
       // Anyone can read reviews
       allow read: if isAuthenticated();
-      // Only clients who had an appointment can create reviews
-      allow create: if isClient() && 
+      // Only clients who had an appointment can create reviews, admin can create for anyone
+      allow create: if isAdmin() || (
+        isClient() && 
         exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
-        get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.clientId == request.auth.uid;
-      // Only the review author can update
-      allow update: if isOwner(resource.data.authorId);
+        get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.clientId == request.auth.uid
+      );
+      // Only the review author can update, admin can update any
+      allow update: if isOwner(resource.data.authorId) || isAdmin();
       allow delete: if isAdmin();
     }
     
     // Stripe customer data
     match /customers/{customerId} {
-      allow read, write: if isOwner(customerId);
+      allow read: if isOwner(customerId) || isAdmin();
+      allow write: if isAdmin();
     }
     
-    // Subscription data
-    match /subscriptions/{subscriptionId} {
-      allow read: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
+    // Admin-only collections
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

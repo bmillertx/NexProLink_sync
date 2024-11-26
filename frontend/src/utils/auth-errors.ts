@@ -24,7 +24,8 @@ export enum EmailAuthError {
   INVALID_EMAIL = 'auth/invalid-email',
   WRONG_PASSWORD = 'auth/wrong-password',
   EMAIL_ALREADY_IN_USE = 'auth/email-already-in-use',
-  WEAK_PASSWORD = 'auth/weak-password'
+  WEAK_PASSWORD = 'auth/weak-password',
+  INVALID_CREDENTIAL = 'auth/invalid-credential'
 }
 
 export function handleAuthError(error: any): string {
@@ -55,7 +56,8 @@ export function handleAuthError(error: any): string {
     case EmailAuthError.INVALID_EMAIL:
       return 'Please enter a valid email address.';
     case EmailAuthError.WRONG_PASSWORD:
-      return 'Incorrect password. Please try again.';
+    case EmailAuthError.INVALID_CREDENTIAL:
+      return 'Invalid email or password. Please try again.';
     case EmailAuthError.EMAIL_ALREADY_IN_USE:
       return 'An account already exists with this email address.';
     case EmailAuthError.WEAK_PASSWORD:
@@ -74,24 +76,29 @@ export async function validateUserProfile(user: any): Promise<boolean> {
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
     
-    if (!userSnap.exists()) {
-      // Check if this is the admin email
-      if (user.email === ADMIN_EMAIL) {
+    // Check if this is the admin email
+    if (user.email === ADMIN_EMAIL) {
+      if (!userSnap.exists()) {
         // Create admin profile if it doesn't exist
         await setDoc(userRef, {
+          uid: user.uid,
           email: user.email,
           role: 'admin',
           displayName: user.displayName || 'Admin',
+          emailVerified: user.emailVerified,
+          isApproved: true,
+          status: 'active',
           createdAt: new Date(),
           updatedAt: new Date()
         });
-        return true;
       }
-      return false;
+      return true;
     }
     
+    if (!userSnap.exists()) return false;
+    
     const userData = userSnap.data();
-    return userData.role === 'admin' || user.email === ADMIN_EMAIL;
+    return userData.role === 'admin' || (userData.isApproved && userData.status === 'active');
   } catch (error) {
     console.error('Profile validation error:', error);
     return false;
@@ -101,17 +108,17 @@ export async function validateUserProfile(user: any): Promise<boolean> {
 export async function isUserAdmin(user: any): Promise<boolean> {
   if (!user) return false;
   
-  // First check if it's the admin email
-  if (user.email === ADMIN_EMAIL) return true;
-  
   try {
+    // First check if it's the admin email
+    if (user.email === ADMIN_EMAIL) return true;
+    
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
     
     if (!userSnap.exists()) return false;
     
     const userData = userSnap.data();
-    return userData.role === 'admin';
+    return userData.role === 'admin' && userData.isApproved === true;
   } catch (error) {
     console.error('Admin check error:', error);
     return false;

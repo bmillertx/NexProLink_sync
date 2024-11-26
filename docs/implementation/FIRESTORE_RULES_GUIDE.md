@@ -79,28 +79,30 @@ match /users/{userId} {
 }
 ```
 
+### Consultants Collection
+```javascript
+match /consultants/{consultantId} {
+  allow read: if isAuthenticated();
+  allow create, update: if isOwner(consultantId) && (isConsultant() || isAdmin());
+  allow delete: if isAdmin();
+}
+```
+
 ### Consultations Collection
 ```javascript
 match /consultations/{consultationId} {
   allow read: if isAuthenticated() && (
-    !exists(resource.data) ||
     resource.data.clientId == request.auth.uid ||
     resource.data.consultantId == request.auth.uid ||
     isAdmin()
   );
   
-  allow create: if isAuthenticated() && (
-    (isClient() && request.resource.data.clientId == request.auth.uid) ||
-    (isConsultant() && request.resource.data.consultantId == request.auth.uid) ||
-    isAdmin()
-  );
-  
+  allow create: if (isClient() && request.resource.data.clientId == request.auth.uid) || isAdmin();
   allow update: if isAuthenticated() && (
     resource.data.clientId == request.auth.uid ||
     resource.data.consultantId == request.auth.uid ||
     isAdmin()
   );
-  
   allow delete: if isAdmin();
 }
 ```
@@ -113,16 +115,42 @@ match /appointments/{appointmentId} {
     resource.data.consultantId == request.auth.uid ||
     isAdmin()
   );
-  allow create: if isAuthenticated() && (
-    (isClient() && request.resource.data.clientId == request.auth.uid) ||
-    isAdmin()
-  );
+  allow create: if isClient() && request.resource.data.clientId == request.auth.uid || isAdmin();
   allow update: if isAuthenticated() && (
     resource.data.clientId == request.auth.uid || 
     resource.data.consultantId == request.auth.uid ||
     isAdmin()
   );
   allow delete: if isAdmin();
+}
+```
+
+### Reviews Collection
+```javascript
+match /reviews/{reviewId} {
+  allow read: if isAuthenticated();
+  allow create: if isAdmin() || (
+    isClient() && 
+    exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+    get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.clientId == request.auth.uid
+  );
+  allow update: if isOwner(resource.data.authorId) || isAdmin();
+  allow delete: if isAdmin();
+}
+```
+
+### Stripe Customer Data
+```javascript
+match /customers/{customerId} {
+  allow read: if isOwner(customerId) || isAdmin();
+  allow write: if isAdmin();
+}
+```
+
+### Admin-only Collections
+```javascript
+match /admin/{document=**} {
+  allow read, write: if isAdmin();
 }
 ```
 
@@ -229,3 +257,10 @@ console.log('Is Admin:', isAdminUser);
 - Implemented role-based access control
 - Enhanced security for all collections
 - Added support for both role and userType fields
+
+### Previous Versions
+- v1.0: Initial implementation
+- v1.1: Added consultant verification
+- v1.2: Enhanced admin controls
+- v1.3: Added admin-only collection
+- v2.0: Comprehensive admin access implementation
